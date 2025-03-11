@@ -1,125 +1,165 @@
 <?php
-session_start();
-require './php/config.php';
+include "./php/databaseConnection.php";
+require_once './vendor/autoload.php';
 
-// 确保用户已登录
-if (!isset($_SESSION['email'])) {
-    header("Location: register-login.php");
-    exit();
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
+// Your secret key (must match the one used for encoding)
+$key = 'bit210';
+
+// The JWT you want to decode\
+if ($_COOKIE['token']) {
+  $jwt = $_COOKIE['token']; // Replace with the actual JWT you want to decode
+  $decoded = JWT::decode($jwt, new Key($key, 'HS256'));
+  $query = "SELECT * FROM customer where id = \"$decoded->customerId\"";
+  $result = $conn->query($query);
+  $data = $result->fetch_assoc();
 }
 
-// 定义消息变量
-$success_message = '';
-$error_message = '';
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+  // Check if the username exists
+  $fullName = $_POST['fullName']; // Replace with the username to check
+  $email = $_POST['email']; // Replace with the username to check
+  $phoneNumber = $_POST['phoneNumber'];
+  $birthday = $_POST['birthday'];
 
-// 处理表单提交
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $phone_number = $_POST['phone_number'] ?? '';
-    $organization_name = !empty($_POST['organization_name']) ? $_POST['organization_name'] : NULL; // 可选字段
-    $new_password = $_POST['new_password'] ?? '';
-    $confirm_password = $_POST['confirm_password'] ?? '';
-
-    // 验证密码是否匹配
-    if (!empty($new_password) && $new_password !== $confirm_password) {
-        $error_message = "Passwords do not match.";
-    } else {
-        $currentEmail = $_SESSION['email'];
-        $passwordSql = !empty($new_password) ? ", password = ?" : "";
-
-        $sql = "UPDATE organisers SET name = ?, email = ?, phone_number = ?, organization_name = ?" . $passwordSql . " WHERE email = ?";
-        $stmt = $conn->prepare($sql);
-
-        if (!$stmt) {
-            $error_message = "SQL statement preparation failed: " . $conn->error;
-        } else {
-            if (!empty($new_password)) {
-                $stmt->bind_param("ssssss", $name, $email, $phone_number, $organization_name, $new_password, $currentEmail);
-            } else {
-                $stmt->bind_param("sssss", $name, $email, $phone_number, $organization_name, $currentEmail);
-            }
-
-            if ($stmt->execute()) {
-                $_SESSION['email'] = $email; // 更新 session 的 email
-                $success_message = "Profile updated successfully!";
-            } else {
-                $error_message = "Error updating profile: " . $stmt->error;
-            }
-
-            $stmt->close();
-        }
-    }
+  $sql = "UPDATE customer
+  SET fullName =  '$fullName', email = '$email', phoneNumber = '$phoneNumber', birthday='$birthday'
+  WHERE id = \"$decoded->customerId\"";
+  if ($conn->query($sql) === TRUE) {
+    echo  "<script>alert('Registration Successful');</script>";
+    header('Location: ../'); // Redirect to a welcome page
+  } else {
+    echo "Error: " . $sql . "<br>" . $conn->error;
+  }
 }
-
-// 获取用户数据
-$email = $_SESSION['email'];
-$stmt = $conn->prepare("SELECT name, email, phone_number, organization_name FROM organisers WHERE email = ?");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$result = $stmt->get_result();
-$userData = $result->fetch_assoc();
-$stmt->close();
-
-// 确保在所有数据库操作完成后关闭连接
-$conn->close();
 ?>
-<!DOCTYPE html>
-<html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile Page</title>
-    <link rel="stylesheet" href="./css/Profile.css">
-    <script>
-        // 如果有成功消息，弹出提示框
-        <?php if (!empty($success_message)) : ?>
-            alert("<?php echo $success_message; ?>");
-        <?php endif; ?>
-    </script>
+  <title>Profile</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.6/jquery.inputmask.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 </head>
 
-<body>
-    <?php include "./php/sidebar.php"; ?>
+<link href="css/styles.css" rel="stylesheet" />
 
-    <div class="profile-container">
-        <h1>My Profile</h1>
-        <?php if (!empty($error_message)) : ?>
-            <p style="color: red;"><?php echo $error_message; ?></p>
-        <?php endif; ?>
-
-        <form method="POST">
-            <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($userData['name']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($userData['email']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="phone_number">Phone Number</label>
-                <input type="text" id="phone_number" name="phone_number"
-                    value="<?php echo htmlspecialchars($userData['phone_number']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="organization_name">Organization Name</label>
-                <input type="text" id="organization_name" name="organization_name"
-                    value="<?php echo htmlspecialchars($userData['organization_name'] ?? ''); ?>">
-            </div>
-            <h2>Change Password</h2>
-            <div class="form-group">
-                <label for="new_password">New Password</label>
-                <input type="password" id="new_password" name="new_password">
-            </div>
-            <div class="form-group">
-                <label for="confirm_password">Confirm Password</label>
-                <input type="password" id="confirm_password" name="confirm_password">
-            </div>
-            <button type="submit">Update Profile</button>
-        </form>
+<hr>
+<?php include "./component/header.php" ?>
+<div class="container bootstrap snippet mt-6">
+  <div class="row">
+    <div class="col-sm-10 mt-2">
+      <?php echo '<h1 >' . strtoupper($decoded->username) . '</h1>' ?>
     </div>
-</body>
+  </div>
+  <div class="row mt-3">
+    <div class="col-sm-12">
+      <div class="tab-content">
+        <div class="tab-pane active" id="home">
+          <hr>
+          <form class="form-horizontal" action="profile.php" method="post" id="registrationForm">
+            <div class="form-group">
+              <label for="fullName">Full Name</label>
+              <input type="text" class="form-control" name="fullName" id="fullName" placeholder="Full name" value="<?php echo $data['fullName'] ?>" title="Enter your full name">
+            </div>
 
-</html>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" class="form-control" name="email" id="email" placeholder="Enter email" value="<?php echo $data['email'] ?>" title="Enter your email">
+            </div>
+
+            <div class="form-group">
+              <label for="phoneNumber">Phone</label>
+              <input type="text" class="form-control" name="phoneNumber" id="phoneNumber" placeholder="Enter phone" value="<?php echo $data['phoneNumber'] ?>" title="Enter your phone number if any.">
+            </div>
+
+            <div class="form-group">
+              <label for="birthday">Birthday</label>
+              <input type="date" class="form-control" name="birthday" id="birthday" placeholder="DD/MM/YYYY" title="Select your birthday" value="<?php echo $data['birthday'] ?>">
+            </div>
+
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+
+          </form>
+
+          <hr>
+
+        </div><!--/tab-pane-->
+      </div><!--/tab-pane-->
+    </div><!--/tab-content-->
+
+  </div>
+</div><!--/row-->
+
+<script>
+  document.querySelector("#submit").addEventListener("click", function() {
+    // Display the success message.
+    document.querySelector("#success-message").style.display = "block";
+    // Return to the same page after 3 seconds.
+    setTimeout(function() {
+      window.location.reload();
+    }, 3000);
+  });
+
+
+  // const submitButton = document.querySelector('button[type="submit"]');
+  // submitButton.addEventListener('click', function(event) {
+  // event.preventDefault();
+  // });
+
+
+  $(document).ready(function() {
+
+
+    var readURL = function(input) {
+      if (input.files && input.files[0]) {
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+          $('.avatar').attr('src', e.target.result);
+        }
+
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+
+    $(".file-upload").on('change', function() {
+      readURL(this);
+    });
+  });
+
+  $(document).ready(function() {
+    $('#myDate').inputmask('99/99/9999', {
+      placeholder: 'dd/mm/yyyy'
+    });
+  });
+</script>
+
+<style>
+  #success-message {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    text-align: center;
+    padding-top: 20%;
+  }
+
+  #mainNav {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    border: none;
+    background-color: #212529;
+    transition: padding-top 0.3s ease-in-out, padding-bottom 0.3s ease-in-out;
+    color: white;
+  }
+</style>

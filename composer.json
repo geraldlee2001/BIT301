@@ -1,6 +1,20 @@
 {
+    "name": "user/bit210-assignment",
+    "autoload": {
+        "psr-4": {
+            "User\\Bit210Assignment\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "geraldlee2001",
+            "email": "geraldlee168168@gmail.com"
+        }
+    ],
     "require": {
-        "phpmailer/phpmailer": "^6.9",
-        "stripe/stripe-php": "^16.6"
+        "ramsey/uuid": "^4.7",
+        "tecnickcom/tcpdf": "^6.6",
+        "firebase/php-jwt": "^6.9",
+        "stripe/stripe-php": "^13.3"
     }
 }

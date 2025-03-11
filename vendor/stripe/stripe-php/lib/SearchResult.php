@@ -124,8 +124,6 @@ class SearchResult extends StripeObject implements \Countable, \IteratorAggregat
     }
 
     /**
-     * @throws Exception\ApiErrorException
-     *
      * @return \Generator|TStripeObject[] A generator that can be used to
      *    iterate across all objects across all pages. As page boundaries are
      *    encountered, the next page will be fetched automatically for
@@ -180,8 +178,6 @@ class SearchResult extends StripeObject implements \Countable, \IteratorAggregat
      *
      * @param null|array $params
      * @param null|array|string $opts
-     *
-     * @throws Exception\ApiErrorException
      *
      * @return SearchResult<TStripeObject>
      */

@@ -1,0 +1,157 @@
+#mainNav {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+  border: none;
+  background-color: #212529 !important;
+  transition: padding-top 0.3s ease-in-out, padding-bottom 0.3s ease-in-out;
+  color: white;
+}
+
+.history-container {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.history-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 20px;
+}
+
+.history-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.history-item-header h3 {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.history-item-header .order-code {
+  font-size: 14px;
+}
+
+.history-item-details {
+  justify-content: space-between;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.history-item-details .product-image {
+  width: 200px;
+  height: 200px;
+  margin-right: 10px;
+}
+
+.history-item-details .quantity,
+.history-item-details .price {
+  font-size: 16px;
+}
+
+*,
+*::after,
+*::before {
+  box-sizing: border-box;
+}
+
+#reviewModal {
+  display: none;
+  position: fixed;
+  top: 25%;
+  left: 40%;
+  transition: 200ms ease-in-out;
+  border: 1px solid black;
+  border-radius: 10px;
+  z-index: 10;
+  background-color: white;
+  width: 500px;
+  max-width: 80%;
+}
+
+
+
+#reviewModal .modal-header {
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid black;
+}
+
+#reviewModal .modal-header .title {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+#reviewModal .modal-body {
+  padding: 10px 15px;
+  margin: auto;
+
+}
+
+#overlay {
+  position: fixed;
+  opacity: 0;
+  transition: 200ms ease-in-out;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+#overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+
+.right {
+  float: right;
+}
+
+.left {
+  float: left;
+}
+
+.rating .stars {
+  margin-right: 15px;
+  text-decoration: none;
+}
+
+.rating .stars .star {
+  float: left;
+  padding: 5px 2px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.rating .stars .star:before {
+  font-family: 'FontAwesome';
+  content: '\f005';
+  color: #d0e8f0;
+  font-size: 3em;
+}
+
+.rating .stars .star:hover:before,
+.rating .stars .star.to_rate:before,
+.rating .stars .star.rated:before {
+  color: #80c1d5;
+}
+
+.rating .stars .star.no_to_rate:before {
+  color: #d0e8f0;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 5px;
+}

@@ -4,10 +4,6 @@
 
 namespace Stripe\Service;
 
-/**
- * @phpstan-import-type RequestOptionsArray from \Stripe\Util\RequestOptions
- * @psalm-import-type RequestOptionsArray from \Stripe\Util\RequestOptions
- */
 class PayoutService extends \Stripe\Service\AbstractService
 {
     /**
@@ -16,7 +12,7 @@ class PayoutService extends \Stripe\Service\AbstractService
      * recently created payouts appearing first.
      *
      * @param null|array $params
-     * @param null|RequestOptionsArray|\Stripe\Util\RequestOptions $opts
+     * @param null|array|\Stripe\Util\RequestOptions $opts
      *
      * @throws \Stripe\Exception\ApiErrorException if the request fails
      *
@@ -28,13 +24,13 @@ class PayoutService extends \Stripe\Service\AbstractService
     }
 
     /**
-     * You can cancel a previously created payout if its status is
-     * <code>pending</code>. Stripe refunds the funds to your available balance. You
-     * can’t cancel automatic Stripe payouts.
+     * You can cancel a previously created payout if it hasn’t been paid out yet.
+     * Stripe refunds the funds to your available balance. You can’t cancel automatic
+     * Stripe payouts.
      *
      * @param string $id
      * @param null|array $params
-     * @param null|RequestOptionsArray|\Stripe\Util\RequestOptions $opts
+     * @param null|array|\Stripe\Util\RequestOptions $opts
      *
      * @throws \Stripe\Exception\ApiErrorException if the request fails
      *
@@ -59,7 +55,7 @@ class PayoutService extends \Stripe\Service\AbstractService
      * pending amounts by source type.
      *
      * @param null|array $params
-     * @param null|RequestOptionsArray|\Stripe\Util\RequestOptions $opts
+     * @param null|array|\Stripe\Util\RequestOptions $opts
      *
      * @throws \Stripe\Exception\ApiErrorException if the request fails
      *
@@ -77,7 +73,7 @@ class PayoutService extends \Stripe\Service\AbstractService
      *
      * @param string $id
      * @param null|array $params
-     * @param null|RequestOptionsArray|\Stripe\Util\RequestOptions $opts
+     * @param null|array|\Stripe\Util\RequestOptions $opts
      *
      * @throws \Stripe\Exception\ApiErrorException if the request fails
      *
@@ -91,7 +87,7 @@ class PayoutService extends \Stripe\Service\AbstractService
     /**
      * Reverses a payout by debiting the destination bank account. At this time, you
      * can only reverse payouts for connected accounts to US bank accounts. If the
-     * payout is manual and in the <code>pending</code> status, use
+     * payout is in the <code>pending</code> status, use
      * <code>/v1/payouts/:id/cancel</code> instead.
      *
      * By requesting a reversal through <code>/v1/payouts/:id/reverse</code>, you
@@ -100,7 +96,7 @@ class PayoutService extends \Stripe\Service\AbstractService
      *
      * @param string $id
      * @param null|array $params
-     * @param null|RequestOptionsArray|\Stripe\Util\RequestOptions $opts
+     * @param null|array|\Stripe\Util\RequestOptions $opts
      *
      * @throws \Stripe\Exception\ApiErrorException if the request fails
      *
@@ -118,7 +114,7 @@ class PayoutService extends \Stripe\Service\AbstractService
      *
      * @param string $id
      * @param null|array $params
-     * @param null|RequestOptionsArray|\Stripe\Util\RequestOptions $opts
+     * @param null|array|\Stripe\Util\RequestOptions $opts
      *
      * @throws \Stripe\Exception\ApiErrorException if the request fails
      *

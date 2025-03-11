@@ -1,0 +1,75 @@
+/* Add custom styles for visual appeal */
+body {
+  background-color: #f5f5f5;
+}
+
+.container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  color: #333;
+}
+
+/* Style the success message */
+#success-message {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background-color: #4CAF50;
+  color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  animation: fadeOut 3s ease-in-out;
+}
+
+@keyframes fadeOut {
+  0% {
+      opacity: 1;
+  }
+  100% {
+      opacity: 0;
+  }
+}
+
+/* Style the panel and list group */
+.panel-default, .list-group {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.panel-heading {
+  background-color: #337ab7;
+  color: #fff;
+  padding: 10px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+/* Add some margin between the columns */
+.col-md-6 {
+  margin-bottom: 20px;
+}
+
+/* Style buttons */
+.btn-primary {
+  background-color: #337ab7;
+  border-color: #2e6da4;
+}
+
+/* Style input fields */
+.form-control {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}

@@ -1,0 +1,14 @@
+.h-100 {
+  height: 100vh;
+}
+
+.card {
+  border: 1px solid #ddd;
+}
+
+input::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: auto;
+}
+

@@ -7,13 +7,14 @@ header('Content-Type: application/json');
 $amount = $_POST['totalPrice'];
 $orderCode = $_POST['cartCode'];
 $YOUR_DOMAIN = 'http://localhost:3000';
-
 $stripe = new \Stripe\StripeClient($stripeSecretKey);
 // Create a PaymentIntent
-$paymentIntent = \Stripe\PaymentIntent::create([
-  'amount' => $amount * 100, // because stripe is in cents
+$paymentIntent = \Stripe\Price::create([
+  'product_data' => [
+    'name' => $orderCode,
+  ],
+  'unit_amount' => $amount * 100, // because stripe is in cents
   'currency' => 'MYR',
-  'metadata' => ['order_id' => $orderCode],
 ]);
 
 $paymentIntentId = $paymentIntent->id;

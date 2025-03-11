@@ -1,0 +1,129 @@
+/* General */
+body {
+    font-family: Arial, sans-serif !important;
+    background-color: #000 !important;
+    color: white !important;
+    text-align: center !important;
+    margin: 0 !important;
+    padding: 20px !important;
+}
+
+/* Stage / Screen */
+.screen {
+    background-color: #fff !important;
+    color: #000 !important;
+    padding: 10px !important;
+    margin: 20px auto !important;
+    width: fit-content !important;
+    font-weight: bold !important;
+    border-radius: 8px !important;
+}
+
+/* Seat legend */
+.legend {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 20px !important;
+    margin: 10px 0 20px !important;
+}
+
+.legend div {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+.legend .seat {
+    width: 20px !important;
+    height: 20px !important;
+    display: inline-block !important;
+    border-radius: 4px !important;
+}
+
+/* Seat Colors */
+.available {
+    background-color: #00bfff !important;
+}
+
+.selected {
+    background-color: #00ff00 !important;
+}
+
+.booked {
+    background-color: #ff4d4d !important;
+}
+
+/* Seat Container Fixes */
+.seat-container-wrapper {
+    overflow-x: auto !important;
+    width: 100% !important;
+}
+
+.seat-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: max-content !important;
+    padding: 10px !important;
+    gap: 5px !important;
+}
+
+/* Rows */
+.row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+/* Row Label */
+.row-label {
+    font-weight: bold !important;
+    margin-right: 10px !important;
+}
+
+/* Individual Seat */
+.seat {
+    width: 30px !important;
+    height: 30px !important;
+    background-color: #00bfff !important;
+    color: #000 !important;
+    font-weight: bold !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: 0.3s !important;
+}
+
+/* Seat State Overrides */
+.seat.selected {
+    background-color: #00ff00 !important;
+}
+
+.seat.booked {
+    background-color: #ff4d4d !important;
+    cursor: not-allowed !important;
+}
+
+/* Summary */
+.summary {
+    margin-top: 20px !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+}
+
+/* Optional: Scrollbar Styling */
+.seat-container-wrapper::-webkit-scrollbar {
+    height: 8px !important;
+}
+
+.seat-container-wrapper::-webkit-scrollbar-thumb {
+    background: #444 !important;
+    border-radius: 10px !important;
+}
+
+.seat-container-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #888 !important;
+}

@@ -48,7 +48,7 @@ if ($user && password_verify($password, $user['password'])) {
     // Generate the JWT
     $token = JWT::encode($payload, $key, 'HS256');
     setcookie("token",  $token, time() + 3600 * 60, "/", "localhost");
-    header('Location: ../product.php'); // Redirect to a welcome page
+    header('Location: ../event.php'); // Redirect to a welcome page
 
   } else {
     // User is not an admin

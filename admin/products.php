@@ -62,7 +62,7 @@ $data = $conn->query($query);
                                     echo "<td> RM " . $item['price']  . "</td>";
                                     echo "<td>" . $item["amount"] . "</td>";
                                     echo "<td><a href='/admin/product_detail.php?id=" . $item["ID"] . "' class='btn btn-primary btn-sm'>Edit</a> 
-                                    <a href='/admin/php/deleteProduct.php?id=" . $item["ID"] . "' class='btn btn-danger btn-sm'>Delete</a></td>";
+                                    <a href='/admin/php/deleteProduct.php?id=" . $item["ID"] . "' class='btn btn-danger btn-sm'>Delete</a></td> ";
                                     echo "</tr>";
                                 }
                                 ?>

@@ -29,6 +29,13 @@ switch ($role) {
             </div>
             Event
           </a>
+
+            <a class="nav-link" href="./analytics.php">
+            <div class="sb-nav-link-icon">
+              <i class="fas fa-tachometer-alt"></i>
+            </div>
+            Analytics
+          </a>
           </div>
         </div>
         <div class="sb-sidenav-footer">
@@ -51,6 +58,12 @@ switch ($role) {
           </div>
           Event
         </a>
+           <a class="nav-link" href="./analytics.php">
+            <div class="sb-nav-link-icon">
+              <i class="fas fa-tachometer-alt"></i>
+            </div>
+            Analytics
+          </a>
         </div>
       </div>
       <div class="sb-sidenav-footer">

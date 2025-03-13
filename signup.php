@@ -72,7 +72,7 @@ $conn->close();
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <meta name="description" content="" />
   <meta name="author" content="" />
-  <title>TripAdvisor - Your best trip planner</title>
+  <title>EVENT X - Your Gateway to Live Events<</title>
   <!-- Favicon-->
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
   <!-- Font Awesome icons (free version)-->
@@ -88,7 +88,7 @@ $conn->close();
   <!-- Navigation-->
   <nav class="navbar bg-dark" id="mainNav">
     <div class="container">
-      <a class="navbar-brand" href="./"> <img src="images/Logo Creator (Community) (1).png" alt="..." width="50" style="margin-right: 10px;" />TripAdvisor</a>
+      <a class="navbar-brand" href="./"> <img src="images/Logo Creator (Community) (1).png" alt="..." width="50" style="margin-right: 10px;" />Even tX</a>
     </div>
   </nav>
 

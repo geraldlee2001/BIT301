@@ -23,6 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     // 检查用户是否存在且密码正确
     if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['id'];  // ✅ 确保 user_id 存入 session
         if ($user['type'] === 'ADMIN') {
             // Payload 数据
             $payload = array(
@@ -39,6 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($user['is_first_login'] == 1) {
                 echo "<script>console.log('Redirecting to change_password.php');</script>"; // 调试输出
                 $_SESSION['organizer_id'] = $user['id']; 
+                $_SESSION['user_id'] = $user['id'];  // 存储用户 ID
                 header('Location: /admin/change_password.php');
                 exit();
             }

@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST')
 
         if ($stmt->execute())
         {
-            echo "<script>alert('活动创建成功！'); window.location.href='product.php';</script>";
+            echo "<script>alert('活动创建成功！'); window.location.href='products.php';</script>";
         }
         else
         {

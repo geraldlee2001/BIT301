@@ -1,70 +1,97 @@
 <?php
 require_once '../vendor/autoload.php';
 include '../php/databaseConnection.php';
-
 use Ramsey\Uuid\Uuid;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
-function isUsernameExists($username, $conn)
-{
-  $username = $conn->real_escape_string($username);
-  $sql = "SELECT id FROM user WHERE userName = '$username'";
-  $result = $conn->query($sql);
-  return $result->num_rows > 0;
+function isUsernameExists($username, $conn) {
+    $username = $conn->real_escape_string($username);
+    $sql = "SELECT id FROM user WHERE userName = '$username'";
+    $result = $conn->query($sql);
+    return $result->num_rows > 0;
+}
+
+// 生成随机密码
+function generateRandomPassword($length = 10) {
+    return substr(str_shuffle("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()"), 0, $length);
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-  $userId = Uuid::uuid4();
-  $merchantId = Uuid::uuid4();
-  $documentId = Uuid::uuid4();
+    $userId = Uuid::uuid4();
+    $merchantId = Uuid::uuid4();
 
-  $username = $_POST['username'];
-  $password = $_POST['password'];
-  $merchantName = $_POST['merchantName'];
-  $contactNumber = $_POST['contactNumber'];
-  $companyDescription = $_POST['companyDescription'];
-  $document = $_FILES['documentUpload'];
+    $username = $_POST['username'];
+    $email = $_POST['email'];
+    $merchantName = $_POST['merchantName'];
+    $contactNumber = $_POST['contactNumber'];
 
-  if (isUsernameExists($username, $conn)) {
-    echo "<script>alert('Username already exists. Please choose a different username.');</script>";
-  } else {
-    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-    $sqlUser = "INSERT INTO user (id, userName, password, type) VALUES ('$userId', '$username', '$hashedPassword', 'MERCHANT')";
+    // 生成默认密码
+    $defaultPassword = generateRandomPassword();
+    $hashedPassword = password_hash($defaultPassword, PASSWORD_BCRYPT);
 
-    if ($conn->query($sqlUser) === TRUE) {
-      // Handle document upload
-      if ($document['error'] === UPLOAD_ERR_OK) {
-        $fileName = $document['name'];
-        $fileTempPath = $document['tmp_name'];
-        $destinationPath = __DIR__ . '/../uploads/' . $fileName;
+    if (isUsernameExists($username, $conn)) {
+        echo "<script>alert('Username already exists. Please choose a different username.');</script>";
+    } else {
+        $sqlUser = "INSERT INTO user (id, userName, email, password, role) 
+                    VALUES ('$userId', '$username', '$email', '$hashedPassword', 'MERCHANT')";
 
-        if (move_uploaded_file($fileTempPath, $destinationPath)) {
-          $imageFilePath = 'uploads/' . $fileName;
-
-          $documentSql = "INSERT INTO document (id, fileName, fileUrl) VALUES ('$documentId', '$fileName', '$imageFilePath')";
-          if ($conn->query($documentSql) === TRUE) {
-            $merchantSql = "INSERT INTO merchants (id, merchantName, contactNumber, companyDescription, documentId, userId)
-                                        VALUES ('$merchantId', '$merchantName', '$contactNumber', '$companyDescription', '$documentId', '$userId')";
+        if ($conn->query($sqlUser) === TRUE) {
+            $merchantSql = "INSERT INTO merchants (id, merchantName, contactNumber, userId) 
+                            VALUES ('$merchantId', '$merchantName', '$contactNumber', '$userId')";
 
             if ($conn->query($merchantSql) === TRUE) {
-              echo "<script>alert('Organizer profile created successfully.'); window.location.href='organizer_list.php';</script>";
+                // 发送邮件
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'yapfongkiat53@gmail.com';
+                    $mail->Password = 'momfaxlauusnbnvl';
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 587;
+
+                    $mail->setFrom('yapfongkiat53@gmail.com', 'SuperConcert');
+                    $mail->addAddress($email, $merchantName);
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Welcome to SuperConcert!';
+                    $mail->Body = "
+                        <html>
+                        <body>
+                        <h1>Welcome to SuperConcert!</h1>
+                        <p>Dear $merchantName,</p>
+                        <p>Your account has been created successfully. Below are your login details:</p>
+                        <p>Email: $email</p>
+                        <p>Password: <strong>$defaultPassword</strong></p>
+                        <p>Please log in and change your password for security purposes.</p>
+                        <p><a href='http://localhost/SuperConcert/php/organiser_Login.php'>Login Now</a></p>
+                        </body>
+                        </html>
+                    ";
+
+                    $mail->send();
+                    echo "<script> 
+                            alert('Registration Successful! Your account has been created successfully. Please check your email for login details.');
+                            window.location.href='Register_Organizer.php';
+                        </script>";
+                } catch (Exception $e) {
+                    echo "<script> 
+                            alert('Error in sending email: {$mail->ErrorInfo}');
+                            window.location.href='Register_Organizer.php';
+                        </script>";
+                }
             } else {
-              echo "Error inserting merchant: " . $conn->error;
+                echo "Error inserting merchant: " . $conn->error;
             }
-          } else {
-            echo "Error saving document info: " . $conn->error;
-          }
         } else {
-          echo "Failed to upload document.";
+            echo "Error creating user: " . $conn->error;
         }
-      } else {
-        echo "Document upload error.";
-      }
-    } else {
-      echo "Error creating user: " . $conn->error;
     }
-  }
 }
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -103,28 +130,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <h2 class="mb-4 text-center">Create Organizer Account</h2>
             <form action="organizer_create.php" method="POST" enctype="multipart/form-data">
               <div class="form-floating mb-3">
-                <input type="text" class="form-control" id="username" name="username" placeholder="Enter Username" required />
+                <input type="text" class="form-control" id="username" name="username" placeholder="Enter Username"
+                  required />
                 <label for="username">Username</label>
               </div>
               <div class="form-floating mb-3">
-                <input type="password" class="form-control" id="password" name="password" placeholder="Enter Password" required />
-                <label for="password">Password</label>
+                <input type="text" class="form-control" id="email" name="email" placeholder="Enter Email" required />
+                <label for="password">Email</label>
               </div>
               <div class="form-floating mb-3">
-                <input type="text" class="form-control" id="merchantName" name="merchantName" placeholder="Enter Organizer Name" required />
+                <input type="text" class="form-control" id="merchantName" name="merchantName"
+                  placeholder="Enter Organizer Name" required />
                 <label for="merchantName">Organizer Name</label>
               </div>
               <div class="form-floating mb-3">
-                <input type="text" class="form-control" id="contactNumber" name="contactNumber" placeholder="Enter Contact Number" required />
+                <input type="text" class="form-control" id="contactNumber" name="contactNumber"
+                  placeholder="Enter Contact Number" required />
                 <label for="contactNumber">Contact Number</label>
-              </div>
-              <div class="form-floating mb-3" style="height: 180px;">
-                <textarea style="height: 150px;" class="form-control" id="companyDescription" name="companyDescription" placeholder="Enter Company Description" rows="5" required></textarea>
-                <label for="companyDescription">Company Description</label>
-              </div>
-              <div class="mb-3">
-                <label for="documentUpload" class="form-label">Document</label>
-                <input type="file" class="form-control" name="documentUpload" id="documentUpload" required accept="application/msword, text/plain, application/pdf">
               </div>
               <div class="align-items-end mt-4 mb-0">
                 <input type="submit" value="Create Organizer" class="btn btn-primary w-100">

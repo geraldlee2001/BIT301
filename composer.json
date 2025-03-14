@@ -15,6 +15,7 @@
         "ramsey/uuid": "^4.7",
         "tecnickcom/tcpdf": "^6.6",
         "firebase/php-jwt": "^6.9",
-        "stripe/stripe-php": "^13.3"
+        "stripe/stripe-php": "^13.3",
+        "phpmailer/phpmailer": "^6.9"
     }
 }

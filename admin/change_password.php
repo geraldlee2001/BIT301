@@ -2,6 +2,7 @@
 session_start();
 include '../php/databaseConnection.php';
 
+// 检查用户是否已登录
 if (!isset($_SESSION['organizer_id'])) {
     header("Location: login.php");
     exit();
@@ -15,9 +16,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
         $userId = $_SESSION['organizer_id'];
 
+        // 更新密码并将 is_first_login 设置为 0
         $sql = "UPDATE user SET password = '$hashedPassword', is_first_login = 0 WHERE id = '$userId'";
         if ($conn->query($sql) === TRUE) {
-            header("Location: index.php");
+            // 清除 session 并重定向到登录页面
+            unset($_SESSION['organizer_id']);
+            header("Location: login.php");
             exit();
         } else {
             $error = "Error updating password.";

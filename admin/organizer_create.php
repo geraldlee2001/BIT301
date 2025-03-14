@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                     $mail->Port = 587;
 
-                    $mail->setFrom('yapfongkiat53@gmail.com', 'SuperConcert');
+                    $mail->setFrom('yapfongkiat53@gmail.com', 'EVENT X');
                     $mail->addAddress($email, $merchantName);
                     $mail->isHTML(true);
                     $mail->Subject = 'Welcome to SuperConcert!';
@@ -65,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <p>Email: $email</p>
                         <p>Password: <strong>$defaultPassword</strong></p>
                         <p>Please log in and change your password for security purposes.</p>
-                        <p><a href='http://localhost/SuperConcert/php/organiser_Login.php'>Login Now</a></p>
+                        <p><a href='http://localhost/admin/login.php'>Login Now</a></p>
                         </body>
                         </html>
                     ";
@@ -73,12 +73,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $mail->send();
                     echo "<script> 
                             alert('Registration Successful! Your account has been created successfully. Please check your email for login details.');
-                            window.location.href='Register_Organizer.php';
+                            window.location.href='organizer_create.php';
                         </script>";
                 } catch (Exception $e) {
                     echo "<script> 
                             alert('Error in sending email: {$mail->ErrorInfo}');
-                            window.location.href='Register_Organizer.php';
+                            window.location.href='admin/login.php';
                         </script>";
                 }
             } else {

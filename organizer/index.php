@@ -31,28 +31,6 @@ $result = $conn->query($sql);
             <a href="view_report.php" class="btn btn-info">View Reports</a>
             <a href="waiting_list.php" class="btn btn-warning">View Waiting List</a>
             <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Event Name</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Location</th>
-                        <th>Settings</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($row = $result->fetch_assoc())
-                    { ?>
-                        <tr>
-                            <td><?php echo $row['event_name']; ?></td>
-                            <td><?php echo $row['event_date']; ?></td>
-                            <td><?php echo $row['event_time']; ?></td>
-                            <td><?php echo $row['event_location']; ?></td>
-                            <td><a href="event_settings.php?event_id=<?php echo $row['id']; ?>"
-                                    class="btn btn-secondary">Manage</a></td>
-                        </tr>
-                    <?php } ?>
-                </tbody>
             </table>
     </div>
     <?php include "../component/organizer_footer.php"; ?>

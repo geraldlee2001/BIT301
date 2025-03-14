@@ -1,6 +1,6 @@
 <?php
 include "../php/tokenDecoding.php";
-$username =  $decoded->username;
+$email =  $decoded->email;
 $role = $decoded->role;
 switch ($role) {
   case "ADMIN":

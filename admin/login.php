@@ -1,5 +1,5 @@
-<!-- process_login.php -->
 <?php
+session_start(); // 启用会话
 require_once '../vendor/autoload.php';
 
 use Firebase\JWT\JWT;
@@ -9,32 +9,40 @@ $key = 'bit210';
 include '../php/databaseConnection.php';
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    // Check if the username and password match (replace with your authentication logic)
-    $username = $_POST['username'];
+    // 获取 email 和 password
+    $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Securely hash the user's password and store it in the database
-    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-    // Query the database to retrieve the user's information
-    $query = "SELECT * FROM user WHERE userName = ?";
+    // 查询数据库
+    $query = "SELECT * FROM user WHERE email = ?";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $username);
+    $stmt->bind_param("s", $email); // 绑定 $email 到查询
     $stmt->execute();
     $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
+    $user = $result->fetch_assoc(); // 获取用户数据
+
+    // 检查用户是否存在且密码正确
     if ($user && password_verify($password, $user['password'])) {
         if ($user['type'] === 'ADMIN') {
-            // Payload data
+            // Payload 数据
             $payload = array(
                 "userId" => $user['id'],
-                "username" =>  $user["userName"],
+                "email" => $user["email"], 
                 "role" => $user['type'],
             );
-            // Generate the JWT
             $token = JWT::encode($payload, $key, 'HS256');
-            setcookie("token",  $token, time() + 3600 * 60, "/", "localhost");
-            header('Location: /admin/index.php'); // Redirect to a welcome page
+            setcookie("token", $token, time() + 3600 * 60, "/", "localhost");
+            header('Location: /admin/index.php'); 
+            exit();
         } else if ($user['type'] === 'MERCHANT') {
+            // 检查是否是第一次登录
+            if ($user['is_first_login'] == 1) {
+                echo "<script>console.log('Redirecting to change_password.php');</script>"; // 调试输出
+                $_SESSION['organizer_id'] = $user['id']; 
+                header('Location: /admin/change_password.php');
+                exit();
+            }
+
             $merchantQuery = "SELECT * FROM merchants WHERE userId = \"$user[id]\"";
             $merchantQuery = $conn->query($merchantQuery);
             $merchant = $merchantQuery->fetch_assoc();
@@ -42,34 +50,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $payload = array(
                     "merchantId" => null,
                     "userId" => $user['id'],
-                    "username" =>  $user["userName"],
+                    "email" => $user["email"],
                     "role" => $user['type'],
                 );
                 $token = JWT::encode($payload, $key, 'HS256');
-                setcookie("token",  $token, time() + 3600 * 60, "/", "localhost");
-                header('Location: /admin/organizer_create.php'); // Redirect to a profile create page
-                return;
+                setcookie("token", $token, time() + 3600 * 60, "/", "localhost");
+                header('Location: /admin/products.php'); 
+                exit();
             }
-            // Payload data
             $payload = array(
                 "merchantId" => $merchant['ID'],
                 "userId" => $user['id'],
-                "username" =>  $user["userName"],
+                "email" => $user["email"], 
                 "role" => $user['type'],
             );
-            // Generate the JWT
             $token = JWT::encode($payload, $key, 'HS256');
-            setcookie("token",  $token, time() + 3600 * 60, "/", "localhost");
-            header('Location: /admin/products.php'); // Redirect to a welcome page
-
+            setcookie("token", $token, time() + 3600 * 60, "/", "localhost");
+            header('Location: /admin/products.php'); 
+            exit();
         }
     } else {
-        // Invalid login credentials
-        echo "<script>alert('Invalid username or password.');</script>";
+        echo "<script>alert('Invalid email or password.'); window.location.href='/admin/login.php';</script>";
+        exit();
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -98,15 +103,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 <div class="card-body">
                                     <form action="login.php" method="POST">
                                         <div class="form-floating mb-3">
-                                            <input class="form-control" id="username" name='username' placeholder="Username" />
-                                            <label for="inputEmail">Username</label>
+                                            <input class="form-control" id="email" name='email' placeholder="email" />
+                                            <label for="inputEmail">email</label>
                                         </div>
                                         <div class="form-floating mb-3">
-                                            <input class="form-control" id="password" type="password" name='password' placeholder="Password" />
+                                            <input class="form-control" id="password" type="password" name='password'
+                                                placeholder="Password" />
                                             <label for="inputPassword">Password</label>
                                         </div>
                                         <div class="form-check mb-3">
-                                            <input class="form-check-input" id="inputRememberPassword" type="checkbox" value="" />
+                                            <input class="form-check-input" id="inputRememberPassword" type="checkbox"
+                                                value="" />
                                             <label class="form-check-label" for="inputRememberPassword">Remember
                                                 Password</label>
                                         </div>
@@ -140,7 +147,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </footer>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
     <script src="js/scripts.js"></script>
 </body>
 

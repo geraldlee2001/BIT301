@@ -52,6 +52,8 @@ $result = $conn->query($sql);
                     <td><?php echo htmlspecialchars($row['description']); ?></td>
                     <td><?php echo htmlspecialchars($row['event_date']); ?></td>
                     <td><?php echo htmlspecialchars($row['event_time']); ?></td>
+                    <td><a href="edit_events.php?id=<?php echo $row['id']; ?>" class="btn btn-warning">Edit</a></td>
+
                 </tr>
             <?php } ?>
         </tbody>

@@ -55,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 );
                 $token = JWT::encode($payload, $key, 'HS256');
                 setcookie("token", $token, time() + 3600 * 60, "/", "localhost");
-                header('Location: /admin/products.php'); 
+                header('Location: /admin/index.php'); 
                 exit();
             }
             $payload = array(
@@ -66,7 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             );
             $token = JWT::encode($payload, $key, 'HS256');
             setcookie("token", $token, time() + 3600 * 60, "/", "localhost");
-            header('Location: /admin/products.php'); 
+            header('Location: /admin/index.php'); 
             exit();
         }
     } else {

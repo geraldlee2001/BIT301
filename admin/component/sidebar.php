@@ -1,8 +1,9 @@
 <?php
 include "../php/tokenDecoding.php";
-$email =  $decoded->email;
+$email = $decoded->email;
 $role = $decoded->role;
-switch ($role) {
+switch ($role)
+{
   case "ADMIN":
     echo ' <div id="layoutSidenav_nav">
       <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
@@ -63,6 +64,12 @@ switch ($role) {
               <i class="fas fa-tachometer-alt"></i>
             </div>
             Analytics
+          </a>
+          <a class="nav-link" href="./.php">
+            <div class="sb-nav-link-icon">
+              <i class="fas fa-tachometer-alt"></i>
+            </div>
+            Ticket Booking
           </a>
         </div>
       </div>

@@ -2,10 +2,11 @@
 include '../php/tokenDecoding.php';
 include "../php/databaseConnection.php";
 
-// Fetch products for the dropdown (filtered by merchant if applicable)
-$query = isset($decoded->merchantId)
-  ? "SELECT * FROM product WHERE merchantId = '{$decoded->merchantId}'"
-  : "SELECT * FROM product";
+$userRole = $decoded->role ?? 'MERCHANT';
+$merchantId = $decoded->merchantId ?? null;
+
+// Query events if user is an organizer
+$query = $merchantId ? "SELECT * FROM product WHERE merchantId = '$merchantId'" : "SELECT * FROM product";
 $data = $conn->query($query);
 ?>
 
@@ -16,43 +17,42 @@ $data = $conn->query($query);
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <meta name="description" content="" />
+  <meta name="author" content="" />
   <title>Analytics Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
   <link href="css/styles.css" rel="stylesheet" />
   <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body>
+<body class="sb-nav-fixed">
   <?php include "./component/header.php" ?>
   <div id="layoutSidenav">
     <?php include "./component/sidebar.php" ?>
     <div id="layoutSidenav_content">
       <main>
         <div class="container-fluid px-4">
-          <h1 class="mt-4">Analytics Dashboard</h1>
+          <h1>Analytics Dashboard</h1>
 
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="period" class="form-label">Select Time Period:</label>
-              <select id="period" class="form-select" onchange="loadChartData()">
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
+          <label for="period">Select Time Period:</label>
+          <select id="period" onchange="loadChartData()">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
 
-            <div class="col-md-8">
-              <label for="eventId" class="form-label">Select Event:</label>
-              <select id="eventId" class="form-select" onchange="loadChartData()">
-                <?php while ($item = $data->fetch_assoc()) {
-                  echo '<option value="' . $item["ID"] . '">' . htmlspecialchars($item['name']) . '</option>';
-                } ?>
-              </select>
-            </div>
-          </div>
+          <?php if ($userRole === 'MERCHANT') : ?>
+            <label for="eventId">Select Event:</label>
+            <select id="eventId" onchange="loadChartData()">
+              <?php while ($item = $data->fetch_assoc()) : ?>
+                <option value="<?= $item['ID'] ?>"><?= $item['name'] ?></option>
+              <?php endwhile; ?>
+            </select>
+          <?php endif; ?>
 
-          <canvas id="salesChart" height="120"></canvas>
+          <canvas id="salesChart"></canvas>
         </div>
       </main>
     </div>
@@ -63,20 +63,48 @@ $data = $conn->query($query);
 
     function loadChartData() {
       const period = document.getElementById('period').value;
-      const eventId = document.getElementById('eventId').value;
+      const eventId = document.getElementById('eventId') ? document.getElementById('eventId').value : null;
+      const role = '<?= strtolower($userRole) ?>';
 
-      fetch(`/admin/php/getAnalytics.php?period=${period}&eventId=${eventId}`)
+      fetch(`/admin/php/getAnalytics.php?period=${period}&eventId=${eventId}&role=${role}`)
         .then(res => res.json())
         .then(data => {
           if (!Array.isArray(data) || data.length === 0) {
-            alert("No data available for the selected event and period.");
+            alert("No data available for the selected period. Try changing the date range or selecting a different event.");
             if (chart) chart.destroy();
             return;
           }
 
           const labels = data.map(item => item.period);
-          const seatOccupancy = data.map(item => parseInt(item.seat_occupancy));
-          const revenue = data.map(item => parseFloat(item.revenue)); // In RM
+          let datasets = [];
+          if (role === 'merchant') {
+            // Event Organizer View
+            datasets = [{
+                label: 'Tickets Sold',
+                data: data.map(item => parseInt(item.total_tickets)),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)'
+              },
+              {
+                label: 'Revenue (RM /100)',
+                data: data.map(item => parseFloat(item.revenue / 100)),
+                backgroundColor: 'rgba(255, 159, 64, 0.6)'
+              }
+            ];
+            // Seat occupancy excluded for merchant
+          } else {
+            datasets = [{
+                label: 'Total Events Hosted',
+                data: data.map(item => parseInt(item.total_events)),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)'
+              },
+              {
+                label: 'Total Seats Booked',
+                data: data.map(item => parseInt(item.total_booked_seats)),
+                backgroundColor: 'rgba(255, 99, 132, 0.6)'
+              }
+            ];
+
+          }
 
           if (chart) chart.destroy();
 
@@ -85,59 +113,19 @@ $data = $conn->query($query);
             type: 'bar',
             data: {
               labels,
-              datasets: [{
-                  label: 'Seats Booked',
-                  data: seatOccupancy,
-                  backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                  borderColor: 'rgba(75, 192, 192, 1)',
-                  borderWidth: 1
-                },
-                {
-                  label: 'Revenue (RM)',
-                  data: revenue,
-                  backgroundColor: 'rgba(255, 159, 64, 0.6)',
-                  borderColor: 'rgba(255, 159, 64, 1)',
-                  borderWidth: 1
-                }
-              ]
+              datasets
             },
             options: {
               responsive: true,
-              plugins: {
-                title: {
-                  display: true,
-                  text: 'Event Performance Analytics'
-                },
-                tooltip: {
-                  callbacks: {
-                    label: function(context) {
-                      return `${context.dataset.label}: ${context.raw}`;
-                    }
-                  }
-                }
-              },
               scales: {
                 y: {
-                  beginAtZero: true,
-                  title: {
-                    display: true,
-                    text: 'Values'
-                  }
-                },
-                x: {
-                  title: {
-                    display: true,
-                    text: 'Period'
-                  }
+                  beginAtZero: true
                 }
               }
             }
           });
         })
-        .catch(err => {
-          console.error("Error fetching analytics data:", err);
-          alert("Failed to load analytics. Please try again.");
-        });
+        .catch(err => console.error("Error fetching data:", err));
     }
 
     window.onload = loadChartData;

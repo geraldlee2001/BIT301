@@ -64,7 +64,7 @@ $data = $conn->query($query);
     function loadChartData() {
       const period = document.getElementById('period').value;
       const eventId = document.getElementById('eventId') ? document.getElementById('eventId').value : '';
-      if (!eventId) {
+      if (!eventId && role === 'merchant') {
         alert("Please create an event to view analytics");
         return;
       }
@@ -80,7 +80,6 @@ $data = $conn->query($query);
 
           const labels = data.map(item => item.period);
           let datasets = [];
-          console.log(data)
           if (role === 'merchant') {
             // Event Organizer View
             datasets = [{

@@ -6,7 +6,7 @@ $userRole = $decoded->role ?? 'MERCHANT';
 $merchantId = $decoded->merchantId ?? null;
 
 // Query events if user is an organizer
-$query = $merchantId ? "SELECT * FROM product WHERE merchantId = '$merchantId'" : "SELECT * FROM product";
+$query = $merchantId ? "SELECT * FROM product WHERE merchantID = '$merchantId'" : "SELECT * FROM product";
 $data = $conn->query($query);
 ?>
 
@@ -63,9 +63,12 @@ $data = $conn->query($query);
 
     function loadChartData() {
       const period = document.getElementById('period').value;
-      const eventId = document.getElementById('eventId') ? document.getElementById('eventId').value : null;
+      const eventId = document.getElementById('eventId') ? document.getElementById('eventId').value : '';
+      if (!eventId) {
+        alert("Please create an event to view analytics");
+        return;
+      }
       const role = '<?= strtolower($userRole) ?>';
-
       fetch(`/admin/php/getAnalytics.php?period=${period}&eventId=${eventId}&role=${role}`)
         .then(res => res.json())
         .then(data => {
@@ -77,6 +80,7 @@ $data = $conn->query($query);
 
           const labels = data.map(item => item.period);
           let datasets = [];
+          console.log(data)
           if (role === 'merchant') {
             // Event Organizer View
             datasets = [{

@@ -3,8 +3,10 @@ require_once '../php/databaseConnection.php';
 include '../component/organizer_header.php';
 include '../php/tokenDecoding.php';
 
+$merchantId = $decoded->merchantId;
+
 // **获取所有活动**
-$sql = "SELECT id, name, description, date, time, imageUrl FROM product ORDER BY date DESC";
+$sql = "SELECT id, name, description, date, time, imageUrl FROM product WHERE merchantID = '$merchantId' ORDER BY date DESC";
 $events = $conn->query($sql);
 
 

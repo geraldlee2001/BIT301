@@ -64,11 +64,11 @@ $data = $conn->query($query);
     function loadChartData() {
       const period = document.getElementById('period').value;
       const eventId = document.getElementById('eventId') ? document.getElementById('eventId').value : '';
+      const role = '<?= strtolower($userRole) ?>';
       if (!eventId && role === 'merchant') {
         alert("Please create an event to view analytics");
         return;
       }
-      const role = '<?= strtolower($userRole) ?>';
       fetch(`/admin/php/getAnalytics.php?period=${period}&eventId=${eventId}&role=${role}`)
         .then(res => res.json())
         .then(data => {

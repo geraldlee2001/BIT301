@@ -21,7 +21,12 @@ switch ($period) {
 
 $data = [];
 
+
+
 if (strtolower($role) === 'merchant') {
+  if ($eventId === null) {
+    return die("Current merchant does not have any events");
+  }
   // Organizer Analytics - Prevent revenue duplication
   $sql = "
     SELECT

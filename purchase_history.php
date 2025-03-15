@@ -2,51 +2,56 @@
 include "./php/tokenDecoding.php";
 include "./php/databaseConnection.php";
 
-// Fetch completed orders
-$sql = "SELECT
-    cart.id AS cartId,
-    cart.code AS cartCode,
-    cartitem.seat AS seat,
-    product.name AS productName,
-    product.id AS productId,
-    product.price AS productPrice,
-    product.imageUrl AS productImageUrl,
-    cartitem.createdAt AS purchasedAt
-FROM cart
-JOIN cartcartitem ON cart.id = cartcartitem.cart_id
-JOIN cartitem ON cartcartitem.cart_item_id = cartitem.id
-JOIN product ON cartitem.productId = product.id
-WHERE cart.status = 'COMPLETED' AND cart.customerId = '$decoded->customerId'
-ORDER BY purchasedAt DESC";
+$userId = $decoded->userId;
 
-$result = $conn->query($sql);
+$sql = "
+  SELECT 
+    b.id AS bookingId,
+    b.totalPrice,
+    b.createdAt AS purchasedAt,
+    b.status,
+    b.promoCode,
+    p.id AS productId,
+    p.name AS productName,
+    p.imageUrl AS productImageUrl,
+    p.date,
+    p.time,
+    s.seatRow,
+    s.seatNumber
+  FROM bookings b
+  JOIN booking_seats bs ON b.id = bs.bookingId
+  JOIN seats s ON bs.seatId = s.id
+  JOIN product p ON b.productId = p.id
+  WHERE b.userId = ? AND b.status IN ('CONFIRMED', 'CANCELLED')
+  ORDER BY b.createdAt DESC
+";
 
-// Organize by cartCode > product
-$orders = [];
-if ($result->num_rows > 0) {
-  while ($row = $result->fetch_assoc()) {
-    $cartCode = $row['cartCode'];
-    $productId = $row['productId'];
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $userId);
+$stmt->execute();
+$result = $stmt->get_result();
 
-    if (!isset($orders[$cartCode])) {
-      $orders[$cartCode] = [
-        'cartId' => $row['cartId'],
-        'purchasedAt' => $row['purchasedAt'],
-        'products' => [],
-      ];
-    }
+// Group by booking
+$purchases = [];
+while ($row = $result->fetch_assoc()) {
+  $bookingId = $row['bookingId'];
 
-    if (!isset($orders[$cartCode]['products'][$productId])) {
-      $orders[$cartCode]['products'][$productId] = [
-        'productName' => $row['productName'],
-        'productPrice' => $row['productPrice'],
-        'productImage' => $row['productImageUrl'],
-        'seats' => [],
-      ];
-    }
-
-    $orders[$cartCode]['products'][$productId]['seats'][] = $row['seat'];
+  if (!isset($purchases[$bookingId])) {
+    $purchases[$bookingId] = [
+      'bookingId' => $bookingId,
+      'productId' => $row['productId'],
+      'productName' => $row['productName'],
+      'productImage' => $row['productImageUrl'],
+      'eventDate' => $row['date'],
+      'purchasedAt' => $row['purchasedAt'],
+      'totalPrice' => $row['totalPrice'],
+      'promoCode' => $row['promoCode'],
+      'status' => $row['status'],
+      'seats' => [],
+    ];
   }
+
+  $purchases[$bookingId]['seats'][] =  $row['seatRow'] . '-' . $row['seatNumber'];
 }
 ?>
 
@@ -70,49 +75,66 @@ if ($result->num_rows > 0) {
         <div class="col-10 mt-6">
           <h3 class="fw-normal mb-4 text-black">Purchased History</h3>
 
-          <?php foreach ($orders as $cartCode => $order): ?>
-            <div class="card rounded-3 mb-4">
-              <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                  <div>
-                    <h5 class="mb-0"><strong>Order Code:</strong> #<?= $cartCode ?></h5>
-                    <small class="text-muted">Purchased at: <?= $order['purchasedAt'] ?></small>
+          <?php if (empty($purchases)): ?>
+            <p>No purchase history found.</p>
+          <?php else: ?>
+            <?php foreach ($purchases as $purchase): ?>
+              <?php
+              $today = new DateTime();
+              $eventDate = new DateTime($purchase['eventDate']);
+              $interval = $today->diff($eventDate);
+              $daysUntilEvent = (int)$interval->format('%r%a');
+              $canCancel = $daysUntilEvent >= 7 && $purchase['status'] === 'CONFIRMED';
+              ?>
+              <div class="card rounded-3 mb-4">
+                <div class="card-body p-4">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h5 class="mb-0">
+                        <strong>Event:</strong> <?= $purchase['productName'] ?>
+                        <?php if ($purchase['status'] === 'CANCELLED'): ?>
+                          <span class="badge badge-danger ml-2">CANCELLED</span>
+                        <?php endif; ?>
+                      </h5>
+                      <small class="text-muted">Purchased at: <?= $purchase['purchasedAt'] ?></small><br>
+                      <small class="text-muted">Event Date: <?= $purchase['eventDate'] ?></small>
+                      <?php if ($purchase['promoCode']): ?>
+                        <br><small class="text-success">Promo Applied: <?= $purchase['promoCode'] ?></small>
+                      <?php endif; ?>
+                    </div>
+                    <div>
+                      <a class="btn btn-primary" href="/php/generateReceipt.php?id=<?= $purchase['bookingId'] ?>">Generate receipt</a>
+                      <?php if ($canCancel): ?>
+                        <a class="btn btn-danger" href="/php/cancel_booking.php?id=<?= $purchase['bookingId'] ?>"
+                          onclick="return confirm('Are you sure you want to cancel this booking?');">
+                          Cancel Booking
+                        </a>
+                      <?php elseif ($purchase['status'] === 'CONFIRMED'): ?>
+                        <button class="btn btn-secondary" disabled title="Cannot cancel within 7 days of the event">
+                          Cancel Unavailable
+                        </button>
+                      <?php endif; ?>
+                    </div>
                   </div>
-                  <a class="btn btn-primary" href="/php/generateReceipt.php?id=<?= $order['cartId'] ?>">Generate receipt</a>
-                </div>
 
-                <?php $orderTotal = 0; ?>
-                <?php foreach ($order['products'] as $product): ?>
-                  <?php
-                  $seats = implode(', ', array_unique($product['seats']));
-                  $count = count($product['seats']);
-                  $total = $count * $product['productPrice'];
-                  $orderTotal += $total;
-                  ?>
                   <div class="row d-flex justify-content-between align-items-center mb-3">
                     <div class="col-md-2 col-lg-2 col-xl-2">
-                      <img src="<?= $product['productImage'] ?>" class="img-fluid rounded-3" alt="<?= $product['productName'] ?>">
+                      <img src="<?= $purchase['productImage'] ?>" class="img-fluid rounded-3"
+                        alt="<?= $purchase['productName'] ?>">
                     </div>
                     <div class="col-md-6 col-lg-6 col-xl-6">
-                      <p class="fw-bold mb-1"><?= $product['productName'] ?></p>
-                      <p class="text-muted mb-1"><strong>Seats:</strong> <?= $seats ?></p>
+                      <p class="fw-bold mb-1"><?= $purchase['productName'] ?></p>
+                      <p class="text-muted mb-1"><strong>Seats:</strong> <?= implode(', ', $purchase['seats']) ?></p>
                     </div>
                     <div class="col-md-4 col-lg-4 col-xl-4 text-end">
-                      <p class="mb-0"><strong>Total:</strong> RM <?= number_format($total, 2) ?></p>
+                      <p class="mb-0"><strong>Total:</strong> RM <?= number_format($purchase['totalPrice'], 2) ?></p>
                     </div>
                   </div>
-                <?php endforeach; ?>
-
-                <div class="text-end mt-3">
-                  <strong>Order Total: RM <?= number_format($orderTotal, 2) ?></strong>
                 </div>
               </div>
-            </div>
-          <?php endforeach; ?>
-
-          <?php if (empty($orders)): ?>
-            <p>No purchase history found.</p>
+            <?php endforeach; ?>
           <?php endif; ?>
+
         </div>
       </div>
     </div>

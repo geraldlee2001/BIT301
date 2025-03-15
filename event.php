@@ -6,6 +6,8 @@ $query = "SELECT
   p.name AS product_name,
   p.amount AS product_amount,
   p.price AS product_price,
+  p.date AS product_date,
+  p.time AS product_time,
   p.imageUrl AS product_imageUrl
 FROM product p
 WHERE p.amount > 0
@@ -49,7 +51,7 @@ $data = $conn->query($query);
             <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
                 <?php
                 while ($item = $data->fetch_assoc()) {
-                    echo '<form method="POST" action="./php/addToCart.php"> <div class="col mb-5 ">
+                    echo '<div>
                                 <a href="/product_detail.php?id=' . $item['product_id'] . '">
                                     <div class="card h-100">
                                         <!-- Product image-->
@@ -66,10 +68,12 @@ $data = $conn->query($query);
                     <div class="d-flex justify-content-center small text-warning mb-2">
                 </div>';
                     echo '<p> RM ' . $item['product_price'] . "</p>";
-                    echo ' </form>';
+                    echo '<p> Amount: ' . $item['product_amount'] . "</p>";
+                    echo '<p> Date: ' . $item['product_date'] . "</p>";
+                    echo '<p> Time: ' . $item['product_time'] . "</p>";
+                    echo ' </div>';
                 }
                 ?>
-
             </div>
         </div>
     </section>

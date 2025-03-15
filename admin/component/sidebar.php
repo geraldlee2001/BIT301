@@ -1,9 +1,8 @@
 <?php
 include "../php/tokenDecoding.php";
-$email = $decoded->email;
+$username = $decoded->username;
 $role = $decoded->role;
-switch ($role)
-{
+switch ($role) {
   case "ADMIN":
     echo ' <div id="layoutSidenav_nav">
       <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">

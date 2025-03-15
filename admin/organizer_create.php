@@ -1,62 +1,65 @@
 <?php
 require_once '../vendor/autoload.php';
 include '../php/databaseConnection.php';
+
 use Ramsey\Uuid\Uuid;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-function isUsernameExists($username, $conn) {
-    $username = $conn->real_escape_string($username);
-    $sql = "SELECT id FROM user WHERE userName = '$username'";
-    $result = $conn->query($sql);
-    return $result->num_rows > 0;
+function isUsernameExists($username, $conn)
+{
+  $username = $conn->real_escape_string($username);
+  $sql = "SELECT id FROM user WHERE userName = '$username'";
+  $result = $conn->query($sql);
+  return $result->num_rows > 0;
 }
 
 // 生成随机密码
-function generateRandomPassword($length = 10) {
-    return substr(str_shuffle("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()"), 0, $length);
+function generateRandomPassword($length = 10)
+{
+  return substr(str_shuffle("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()"), 0, $length);
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $userId = Uuid::uuid4();
-    $merchantId = Uuid::uuid4();
+  $userId = Uuid::uuid4();
+  $merchantId = Uuid::uuid4();
 
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $merchantName = $_POST['merchantName'];
-    $contactNumber = $_POST['contactNumber'];
+  $username = $_POST['username'];
+  $email = $_POST['email'];
+  $merchantName = $_POST['merchantName'];
+  $contactNumber = $_POST['contactNumber'];
 
-    // 生成默认密码
-    $defaultPassword = generateRandomPassword();
-    $hashedPassword = password_hash($defaultPassword, PASSWORD_BCRYPT);
+  // 生成默认密码
+  $defaultPassword = generateRandomPassword();
+  $hashedPassword = password_hash($defaultPassword, PASSWORD_BCRYPT);
 
-    if (isUsernameExists($username, $conn)) {
-        echo "<script>alert('Username already exists. Please choose a different username.');</script>";
-    } else {
-        $sqlUser = "INSERT INTO user (id, userName, email, password, role) 
-                    VALUES ('$userId', '$username', '$email', '$hashedPassword', 'MERCHANT')";
+  if (isUsernameExists($username, $conn)) {
+    echo "<script>alert('Username already exists. Please choose a different username.');</script>";
+  } else {
+    $sqlUser = "INSERT INTO user (id, userName, password,isFirstTimeLogin, type) 
+                    VALUES ('$userId', '$username', '$hashedPassword', 1,  'MERCHANT')";
 
-        if ($conn->query($sqlUser) === TRUE) {
-            $merchantSql = "INSERT INTO merchants (id, merchantName, contactNumber, userId) 
-                            VALUES ('$merchantId', '$merchantName', '$contactNumber', '$userId')";
+    if ($conn->query($sqlUser) === TRUE) {
+      $merchantSql = "INSERT INTO merchants (id, merchantName,email, contactNumber, userId) 
+                            VALUES ('$merchantId', '$merchantName', '$email', '$contactNumber', '$userId')";
 
-            if ($conn->query($merchantSql) === TRUE) {
-                // 发送邮件
-                $mail = new PHPMailer(true);
-                try {
-                    $mail->isSMTP();
-                    $mail->Host = 'smtp.gmail.com';
-                    $mail->SMTPAuth = true;
-                    $mail->Username = 'yapfongkiat53@gmail.com';
-                    $mail->Password = 'momfaxlauusnbnvl';
-                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port = 587;
+      if ($conn->query($merchantSql) === TRUE) {
+        // 发送邮件
+        $mail = new PHPMailer(true);
+        try {
+          $mail->isSMTP();
+          $mail->Host = 'smtp.gmail.com';
+          $mail->SMTPAuth = true;
+          $mail->Username = 'yapfongkiat53@gmail.com';
+          $mail->Password = 'momfaxlauusnbnvl';
+          $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+          $mail->Port = 587;
 
-                    $mail->setFrom('yapfongkiat53@gmail.com', 'EVENT X');
-                    $mail->addAddress($email, $merchantName);
-                    $mail->isHTML(true);
-                    $mail->Subject = 'Welcome to SuperConcert!';
-                    $mail->Body = "
+          $mail->setFrom('yapfongkiat53@gmail.com', 'EVENT X');
+          $mail->addAddress($email, $merchantName);
+          $mail->isHTML(true);
+          $mail->Subject = 'Welcome to SuperConcert!';
+          $mail->Body = "
                         <html>
                         <body>
                         <h1>Welcome to SuperConcert!</h1>
@@ -70,24 +73,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </html>
                     ";
 
-                    $mail->send();
-                    echo "<script> 
+          $mail->send();
+          echo "<script> 
                             alert('Registration Successful! Your account has been created successfully. Please check your email for login details.');
                             window.location.href='organizer_create.php';
                         </script>";
-                } catch (Exception $e) {
-                    echo "<script> 
+        } catch (Exception $e) {
+          echo "<script> 
                             alert('Error in sending email: {$mail->ErrorInfo}');
                             window.location.href='admin/login.php';
                         </script>";
-                }
-            } else {
-                echo "Error inserting merchant: " . $conn->error;
-            }
-        } else {
-            echo "Error creating user: " . $conn->error;
         }
+      } else {
+        echo "Error inserting merchant: " . $conn->error;
+      }
+    } else {
+      echo "Error creating user: " . $conn->error;
     }
+  }
 }
 ?>
 

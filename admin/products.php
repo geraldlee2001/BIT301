@@ -4,12 +4,10 @@ include '../component/organizer_header.php';
 include '../php/tokenDecoding.php';
 
 // **获取所有活动**
-$sql = "SELECT id, event_name, description, event_date, event_time, image FROM events ORDER BY event_date DESC";
+$sql = "SELECT id, name, description, date, time, imageUrl FROM product ORDER BY date DESC";
 $events = $conn->query($sql);
 
-// **获取所有产品**
-$query = isset($decoded->merchantId) ? "SELECT * FROM product WHERE merchantId = '$decoded->merchantId'" : "SELECT * FROM product";
-$products = $conn->query($query);
+
 ?>
 
 <!DOCTYPE html>
@@ -17,7 +15,7 @@ $products = $conn->query($query);
 
 <head>
     <meta charset="UTF-8">
-    <title>Events & Products</title>
+    <title>Events </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link href="css/styles.css" rel="stylesheet" />
@@ -40,10 +38,10 @@ $products = $conn->query($query);
         <div id="layoutSidenav_content">
             <main>
                 <div class="container-fluid px-4">
-                    <h1 class="mt-4">Events & Products</h1>
+                    <h1 class="mt-4">Events</h1>
                     <ol class="breadcrumb mb-4">
                         <li class="breadcrumb-item"><a href="index.php">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Events & Products</li>
+                        <li class="breadcrumb-item active">Events</li>
                     </ol>
 
                     <!-- Events Table -->
@@ -65,26 +63,22 @@ $products = $conn->query($query);
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php while ($row = $events->fetch_assoc())
-                                    { ?>
+                                    <?php while ($row = $events->fetch_assoc()) { ?>
                                         <tr>
                                             <td>
                                                 <?php
-                                                if (!empty($row['image']) && file_exists($row['image']))
-                                                {
-                                                    echo '<img src="' . htmlspecialchars($row['image']) . '" class="event-img" alt="Event Poster">';
-                                                }
-                                                else
-                                                {
+                                                if (!empty($row['imageUrl'])) {
+                                                    echo '<img id="imagePreview" src="../' . $row['imageUrl'] . '" width=180 height=100 alt="Preview">';
+                                                } else {
                                                     echo '<img src="../uploads/default.jpg" class="event-img" alt="No Image">';
                                                 }
                                                 ?>
                                             </td>
-                                            <td><?php echo htmlspecialchars($row['event_name']); ?></td>
+                                            <td><?php echo htmlspecialchars($row['name']); ?></td>
                                             <td><?php echo htmlspecialchars($row['description']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['event_date']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['event_time']); ?></td>
-                                            <td><a href="edit_events.php?id=<?php echo $row['id']; ?>"
+                                            <td><?php echo htmlspecialchars($row['date']); ?></td>
+                                            <td><?php echo htmlspecialchars($row['time']); ?></td>
+                                            <td><a href="product_detail.php?id=<?php echo $row['id']; ?>"
                                                     class="btn btn-warning">Edit</a></td>
                                         </tr>
                                     <?php } ?>

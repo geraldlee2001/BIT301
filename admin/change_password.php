@@ -17,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $userId = $_SESSION['organizer_id'];
 
         // 更新密码并将 is_first_login 设置为 0
-        $sql = "UPDATE user SET password = '$hashedPassword', is_first_login = 0 WHERE id = '$userId'";
+        $sql = "UPDATE user SET password = '$hashedPassword', isFirstTimeLogin = 0 WHERE id = '$userId'";
         if ($conn->query($sql) === TRUE) {
             // 清除 session 并重定向到登录页面
             unset($_SESSION['organizer_id']);
@@ -34,6 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Change Password</title>
@@ -42,10 +43,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         body {
             background-color: #f8f9fa;
         }
+
         .container {
             max-width: 400px;
             margin-top: 100px;
         }
+
         .form-container {
             background: white;
             padding: 2rem;
@@ -54,6 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="form-container">
@@ -73,4 +77,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 </body>
+
 </html>

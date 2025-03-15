@@ -29,7 +29,6 @@
               break;
             case "/product.php":
             default:
-              include "./component/cartButton.php";
               break;
           }
           ?>

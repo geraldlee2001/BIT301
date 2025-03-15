@@ -6,48 +6,41 @@ use Firebase\JWT\JWT;
 use Ramsey\Uuid\Uuid;
 
 $key = 'bit210';
-$id = Uuid::uuid4();
+$newCartId = Uuid::uuid4();
 $code = bin2hex(random_bytes(10));
 
-$cartId = $decoded->cartId;
-$customerId = $decoded->customerId;
+$bookingId = $_GET['bookingId'] ?? '';
 $status = $_GET['status'] ?? 'failed';
 $price = $_GET['price'] ?? 0;
-$cartCode = $_GET['code'] ?? '';
 
-$cartQuery = "SELECT * FROM cart WHERE id = \"$cartId\" AND code = \"$cartCode\"";
-$cartResult = $conn->query($cartQuery);
-$cartData = $cartResult->fetch_assoc();
+echo $bookingId;
 
-if (!$cartData) {
-  die("Invalid cart or code.");
+// Get user info
+$userId = $decoded->userId;
+$customerId = $decoded->customerId;
+
+// Check booking
+$bookingQuery = "SELECT * FROM bookings WHERE id = '$bookingId'";
+$bookingResult = $conn->query($bookingQuery);
+$booking = $bookingResult->fetch_assoc();
+
+if (!$booking) {
+  die("Invalid booking ID.");
 }
 
 if ($status === 'success') {
-  // 1. Update cart status to COMPLETED
-  $updateCartStatusQuery = "UPDATE cart SET status = 'COMPLETED' WHERE id = \"$cartId\"";
-  $conn->query($updateCartStatusQuery);
+  // 1. Update booking status to CONFIRMED
+  $updateBookingQuery = "UPDATE bookings SET status = 'CONFIRMED' WHERE id = '$bookingId'";
+  $conn->query($updateBookingQuery);
 
-  // 2. Insert purchase history
-  $purchaseHistoryQuery = "INSERT INTO purchasehistory (id, cartId, customerId, totalAmount) VALUES ('$id', '$cartId', '$customerId', '$price')";
-  $conn->query($purchaseHistoryQuery);
+  // 2. (Optional) Insert into booking_history or logs if needed
 
-  // 3. Update stock
-  $productQuery = "UPDATE product
-    JOIN cartitem ON product.id = cartitem.productId
-    JOIN cartcartitem ON cartitem.id = cartcartitem.cart_item_id
-    SET product.amount = product.amount - 1
-    WHERE cartcartitem.cart_id = \"$cartId\"";
-  $conn->query($productQuery);
+  // 3. (Optional) Clear any temporary user data
 
-  // 4. Create new empty cart
-  $newCartQuery = "INSERT INTO cart (id, customerId, status, code) VALUES ('$id', '$customerId', 'ADDING', '$code')";
-  $conn->query($newCartQuery);
-
-  // 5. Refresh token with new cartId
+  // 4. Refresh token (if needed)
   $payload = array(
     "customerId" => $decoded->customerId,
-    "cartId" => $id,
+    "cartId" => $newCartId, // still used if cart logic exists elsewhere
     "userId" => $decoded->userId,
     "username" => $decoded->username,
     "role" => $decoded->role,
@@ -64,7 +57,6 @@ if ($status === 'success') {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <title>Payment <?php echo $status === 'success' ? 'Successful' : 'Failed'; ?></title>
-
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
   <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
   <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" />
@@ -79,8 +71,8 @@ if ($status === 'success') {
     <?php if ($status === 'success'): ?>
       <h1 class="mt-10">Payment Successful</h1>
       <i class="fas fa-check-circle fa-5x" style="color:green"></i>
-      <strong><?php echo htmlspecialchars($cartCode); ?></strong>
-      <p>Thank you for your purchase!</p>
+      <strong><?php echo htmlspecialchars($bookingId); ?></strong>
+      <p>Your event booking has been confirmed!</p>
     <?php else: ?>
       <h1 class="mt-5">Payment Failed</h1>
       <i class="fas fa-times-circle fa-5x" style="color:red"></i>

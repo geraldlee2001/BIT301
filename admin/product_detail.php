@@ -46,14 +46,6 @@ $data = $result->fetch_assoc();
                         <textarea class="form-control" id="description" name="description" rows="5"><?php echo $data['description'] ?></textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="price" class="form-label">Price</label>
-                        <input type="number" class="form-control" id="price" name="price" value="<?php echo $data['price'] ?>">
-                    </div>
-                    <div class="mb-3">
-                        <label for="amount" class="form-label">Amount</label>
-                        <input type="number" class="form-control" id="amount" name="amount" value="<?php echo $data['amount'] ?>">
-                    </div>
-                    <div class="mb-3">
                         <label for="image" class="form-label">Image</label>
                         <input type="file" class="form-control" id="image" name="image" accept="image/*">
                         <img id="imagePreview" src="../<?php echo $data['imageUrl'] ?>" alt="Preview">
@@ -61,10 +53,64 @@ $data = $result->fetch_assoc();
                     <button type="submit" class="btn btn-primary">Update</button>
                 </form>
 
+                <h4>2. Assign to Seating Sections</h4>
+                <div id="seatingSection">
+                    <div class="section">
+                        <input type="text" name="section_name[]" placeholder="Section Name" required>
+                        <select name="section_ticket_type[]">
+                            <!-- Will be populated using JS -->
+                        </select>
+                    </div>
+                </div>
+                <button type="button" onclick="addSection()">Add Section</button>
+
             </main>
             <?php include "./component/footer.php" ?>
         </div>
     </div>
+    <script>
+        function addTicketType() {
+            const div = document.createElement('div');
+            div.className = 'ticket-type';
+            div.innerHTML = `<input type="text" name="ticket_name[]" placeholder="Category Name" required>
+        <input type="number" step="0.01" name="ticket_price[]" placeholder="Price" required>
+        <input type="number" name="ticket_max[]" placeholder="Max Qty" required>`;
+            document.getElementById('ticketTypes').appendChild(div);
+        }
+
+        function addSection() {
+            const div = document.createElement('div');
+            div.className = 'section';
+            div.innerHTML = `<input type="text" name="section_name[]" placeholder="Section Name" required>
+        <select name="section_ticket_type[]"></select>`;
+            const select = div.querySelector("select");
+            populateSelect(select);
+            document.getElementById('seatingSection').appendChild(div);
+        }
+
+        function addPromo() {
+            const div = document.createElement('div');
+            div.className = 'promo';
+            div.innerHTML = `<input type="text" name="promo_code[]" placeholder="Promo Code">
+        <input type="number" name="promo_discount[]" placeholder="Discount (%)">
+        <input type="date" name="promo_expiry[]">
+        <select name="promo_ticket_type[]"></select>`;
+            const select = div.querySelector("select");
+            populateSelect(select);
+            document.getElementById('promoSection').appendChild(div);
+        }
+
+        function populateSelect(select) {
+            const ticketNames = document.getElementsByName("ticket_name[]");
+            select.innerHTML = '';
+            ticketNames.forEach((input, i) => {
+                const option = document.createElement("option");
+                option.value = i;
+                option.textContent = input.value || `Ticket ${i+1}`;
+                select.appendChild(option);
+            });
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="js/scripts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>

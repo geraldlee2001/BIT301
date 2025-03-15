@@ -28,18 +28,10 @@ if ($user && password_verify($password, $user['password'])) {
       header('Location: /profile_create.php'); // Redirect to a profile create page
       return;
     }
-    // Check if the user has a cart
-    $cartQuery = "SELECT * FROM cart WHERE customerId = \"$customer[id]\" AND status =\"ADDING\"";
-    $cartResult = $conn->query($cartQuery);
-    $cart = $cartResult->fetch_assoc();
-    if ($cart == null) {
-      $cartQuery = "INSERT INTO cart (id, customerId, status,code) VALUES ('$id', '$customer[id]', 'ADDING','$code')";
-      $newCartResult = $conn->query($cartQuery);
-    }
+
     // Payload data
     $payload = array(
       "customerId" => $customer['id'],
-      "cartId" => $cart == null ? $id : $cart['id'],
       "userId" => $user['id'],
       "username" =>  $user["userName"],
       "role" => $user['type'],

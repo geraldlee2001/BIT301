@@ -7,42 +7,40 @@ header('Content-Type: application/json');
 $period = $_GET['period'] ?? 'daily';
 $eventId = isset($_GET['eventId']) ? intval($_GET['eventId']) : null;
 
-// Define groupBy clause based on period
+// Define groupBy clause
 switch ($period) {
   case 'weekly':
-    $groupByPeriod = "YEARWEEK(ph.createdAt)";
+    $groupByPeriod = "YEARWEEK(b.createdAt)";
     break;
   case 'monthly':
-    $groupByPeriod = "DATE_FORMAT(ph.createdAt, '%Y-%m')";
+    $groupByPeriod = "DATE_FORMAT(b.createdAt, '%Y-%m')";
     break;
   default:
-    $groupByPeriod = "DATE(ph.createdAt)";
+    $groupByPeriod = "DATE(b.createdAt)";
     break;
 }
 
-// Build base SQL query
+// Base SQL
 $sql = "
 SELECT
   $groupByPeriod AS period,
-  ci.productId,
-  COUNT(DISTINCT ph.id) AS total_tickets,
-  SUM(ph.totalAmount) AS revenue,
-  SUM(JSON_LENGTH(ci.seat)) AS seat_occupancy
-FROM purchasehistory ph
-JOIN cart c ON ph.cartId = c.id
-JOIN cartcartitem cci ON c.id = cci.cart_id
-JOIN cartitem ci ON cci.cart_item_id = ci.id
-WHERE 1=1
+  b.productId,
+  COUNT(DISTINCT b.id) AS total_bookings,
+  SUM(b.totalPrice) AS revenue,
+  COUNT(bs.seatId) AS seat_occupancy
+FROM bookings b
+LEFT JOIN booking_seats bs ON b.id = bs.bookingId
+WHERE b.status = 'CONFIRMED'
 ";
 
-// Apply event filter if provided
+// Optional event filter
 if ($eventId) {
-  $sql .= " AND ci.productId = $eventId";
+  $sql .= " AND b.productId = $eventId";
 }
 
-$sql .= " GROUP BY period, ci.productId ORDER BY period ASC, ci.productId ASC";
+$sql .= " GROUP BY period, b.productId ORDER BY period ASC, b.productId ASC";
 
-// Execute and prepare response
+// Execute
 $data = [];
 $result = $conn->query($sql);
 
@@ -51,9 +49,9 @@ if ($result && $result->num_rows > 0) {
     $data[] = [
       'period' => $row['period'],
       'productId' => $row['productId'],
-      'total_tickets' => $row['total_tickets'],
-      'revenue' => $row['revenue'],
-      'seat_occupancy' => $row['seat_occupancy']
+      'total_bookings' => (int) $row['total_bookings'],
+      'revenue' => (float) $row['revenue'],
+      'seat_occupancy' => (int) $row['seat_occupancy']
     ];
   }
 }

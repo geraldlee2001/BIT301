@@ -17,6 +17,7 @@ let bookedSeats = [];
 const urlParams = new URLSearchParams( window.location.search );
 const productId = urlParams.get( "id" );
 
+// Fetch booked seats and render
 fetch( `/php/getBookedSeats.php?id=${ productId }` )
   .then( res => res.json() )
   .then( data =>
@@ -27,6 +28,8 @@ fetch( `/php/getBookedSeats.php?id=${ productId }` )
 
 function renderSeatMap ()
 {
+  seatMapContainer.innerHTML = ""; // Clear previous seats
+
   rows.forEach( row =>
   {
     const rowEl = document.createElement( "div" );
@@ -37,7 +40,8 @@ function renderSeatMap ()
     label.classList.add( "row-label" );
     rowEl.appendChild( label );
 
-    const count = seatCounts[ row ] || 30;
+    const count = seatCounts[ row ];
+
     for ( let i = 1; i <= count; i++ )
     {
       const seat = document.createElement( "div" );
@@ -46,6 +50,7 @@ function renderSeatMap ()
       seat.textContent = i;
 
       const seatId = `${ row }-${ i }`;
+
       if ( bookedSeats.includes( seatId ) )
       {
         seat.classList.add( "booked" );
@@ -67,9 +72,15 @@ function renderSeatMap ()
 
 function updateSelectedSeats ()
 {
-  const selected = document.querySelectorAll( ".seat.selected:not(.booked)" );
-  const selectedText = [ ...selected ]
-    .map( seat => `${ seat.getAttribute( "data-row" ) }-${ seat.textContent.trim() }` )
-    .join( ", " ) || "None";
+  const selected = document.querySelectorAll( "#seat-map .seat.selected:not(.booked)" );
+
+  const selectedText = [ ...selected ].map( seat =>
+  {
+    const row = seat.getAttribute( "data-row" );
+    const number = seat.textContent.trim();
+    return `${ row }-${ number }`;
+  } ).join( ", " ) || "None";
+
   document.getElementById( "selected-seats" ).textContent = selectedText;
+  document.getElementById( "selectedSeatsInput" ).value = selectedText;
 }

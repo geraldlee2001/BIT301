@@ -1,49 +1,63 @@
 <?php
-$productId = $_GET['id']; // get product ID from URL
+include "./php/databaseConnection.php";
+$eventId = $_GET['id'];
+$event = $conn->query("SELECT * FROM product WHERE id='$eventId'")->fetch_assoc();
+$seats = $conn->query("SELECT * FROM seats WHERE eventId='$eventId'");
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Event Seat Booking</title>
+  <title><?= $event['name'] ?></title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/product-detail.css" />
+  <style>
+    .seat {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #999;
+      margin: 3px;
+      display: inline-block;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .booked {
+      background-color: gray;
+      pointer-events: none;
+    }
+
+    .selected {
+      background-color: green;
+    }
+  </style>
 </head>
 
 <body>
-  <?php include "./component/header.php"; ?>
-  <div class="container-fluid h-100">
-    <div class="container">
-      <div class="row d-flex justify-content-center align-items-center">
-        <div class="col-10 mt-10">
-          <h1>🎟️ Event Seat Booking</h1>
+  <h1><?= $event['name'] ?></h1>
 
-          <div class="screen">STAGE / SCREEN</div>
-
-          <div class="legend">
-            <div><span class="seat available"></span> Available</div>
-            <div><span class="seat selected"></span> Selected</div>
-            <div><span class="seat booked"></span> Booked</div>
-          </div>
-
-          <div class="seat-container-wrapper">
-            <div class="seat-container" id="seat-map"></div>
-          </div>
-
-          <div class="summary">
-            <p>Selected Seats: <span id="selected-seats">None</span></p>
-          </div>
-
-          <button onclick="addToCart()">Add to Cart</button>
+  <form action="/review.php" method="POST">
+    <input type="hidden" name="eventId" value="<?= $eventId ?>">
+    <div id="seat-map">
+      <?php while ($seat = $seats->fetch_assoc()) : ?>
+        <div class="seat <?= $seat['isBooked'] ? 'booked' : '' ?>"
+          data-id="<?= $seat['id'] ?>"
+          data-row="<?= $seat['seatRow'] ?>"
+          data-number="<?= $seat['seatNumber'] ?>">
+          <?= $seat['seatNumber'] ?>
         </div>
-      </div>
+      <?php endwhile; ?>
     </div>
 
+    <p>Selected: <span id="selected-seats">None</span></p>
+    <input type="hidden" name="selectedSeats" id="selectedSeatsInput">
 
-    <script src="js/product-detail.js"></script>
-    <script src="js/addToCart.js"></script>
+    <label>Promo Code: <input type="text" name="promoCode" /></label>
+    <button type="submit">Book</button>
+  </form>
+
+  <script src="js/product-detail.js"></script>
+
 </body>
 
 </html>

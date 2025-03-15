@@ -57,5 +57,5 @@ foreach ($selectedSeats as $seatLabel) {
 }
 
 // Redirect to checkout
-header("Location: /checkout.php?totalPrice=$totalPrice&bookingId=$bookingId");
+header("Location:/php/checkout.php?totalPrice=$totalPrice&bookingId=$bookingId");
 exit();

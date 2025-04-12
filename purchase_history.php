@@ -64,6 +64,8 @@ while ($row = $result->fetch_assoc()) {
   <title>Purchased History</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
   <link href="css/styles.css" rel="stylesheet" />
+  <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+  <script src="js/purchase-history.js"></script>
 </head>
 
 <body>
@@ -87,7 +89,7 @@ while ($row = $result->fetch_assoc()) {
               $canCancel = $daysUntilEvent >= 7 && $purchase['status'] === 'CONFIRMED';
               ?>
               <div class="card rounded-3 mb-4">
-                <div class="card-body p-4">
+                <div class="card-body p-4" data-booking-id="<?= $purchase['bookingId'] ?>">
                   <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                       <h5 class="mb-0">
@@ -97,13 +99,15 @@ while ($row = $result->fetch_assoc()) {
                         <?php endif; ?>
                       </h5>
                       <small class="text-muted">Purchased at: <?= $purchase['purchasedAt'] ?></small><br>
-                      <small class="text-muted">Event Date: <?= $purchase['eventDate'] ?></small>
+                      <small class="text-muted" id="eventDate">Event Date: <?= $purchase['eventDate'] ?></small>
                       <?php if ($purchase['promoCode']): ?>
                         <br><small class="text-success">Promo Applied: <?= $purchase['promoCode'] ?></small>
                       <?php endif; ?>
                     </div>
                     <div>
-                      <a class="btn btn-primary" href="/php/generateReceipt.php?id=<?= $purchase['bookingId'] ?>">Generate receipt</a>
+                      <?php if ($purchase['status'] !== 'CANCELLED'): ?>
+                        <button class="btn btn-primary" onclick="toggleQRCode('<?= $purchase['productId'] ?>', '<?= $purchase['bookingId'] ?>')">Display QR</button>
+                      <?php endif; ?>
                       <?php if ($canCancel): ?>
                         <a class="btn btn-danger" href="/php/cancel_booking.php?id=<?= $purchase['bookingId'] ?>"
                           onclick="return confirm('Are you sure you want to cancel this booking?');">

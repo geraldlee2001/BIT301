@@ -1,47 +1,62 @@
 <?php
 include "./php/databaseConnection.php";
 include "./php/tokenDecoding.php";
+require_once './vendor/autoload.php';
+require_once './php/secrets.php';
 
 use Firebase\JWT\JWT;
 use Ramsey\Uuid\Uuid;
+use Stripe\Stripe;
+use Stripe\Checkout\Session as StripeSession;
 
 $key = 'bit210';
 $newCartId = Uuid::uuid4();
-$code = bin2hex(random_bytes(10));
 
-$bookingId = $_GET['bookingId'] ?? '';
+// Get query parameters
 $status = $_GET['status'] ?? 'failed';
+$bookingId = $_GET['bookingId'] ?? '';
 $price = $_GET['price'] ?? 0;
+$paymentIntentId = $_GET['paymentIntentId'] ?? '';
+$stripeSessionId = $_GET['session_id'] ?? '';
 
-echo $bookingId;
-
-// Get user info
+// Get user info from token
 $userId = $decoded->userId;
 $customerId = $decoded->customerId;
 
-// Check booking
-$bookingQuery = "SELECT * FROM bookings WHERE id = '$bookingId'";
-$bookingResult = $conn->query($bookingQuery);
+// Validate booking
+$bookingStmt = $conn->prepare("SELECT * FROM bookings WHERE id = ? AND userId = ?");
+$bookingStmt->bind_param("ss", $bookingId, $userId);
+$bookingStmt->execute();
+$bookingResult = $bookingStmt->get_result();
 $booking = $bookingResult->fetch_assoc();
 
 if (!$booking) {
-  die("Invalid booking ID.");
+  die("Invalid or unauthorized booking.");
 }
 
+// If success, confirm booking and store paymentIntentId
 if ($status === 'success') {
-  // 1. Update booking status to CONFIRMED
-  $updateBookingQuery = "UPDATE bookings SET status = 'CONFIRMED' WHERE id = '$bookingId'";
-  $conn->query($updateBookingQuery);
+  // If paymentIntentId not passed, get from Stripe session
+  if (!$paymentIntentId && $stripeSessionId) {
+    Stripe::setApiKey($stripeSecretKey);
+    try {
+      $session = StripeSession::retrieve($stripeSessionId);
+      $paymentIntentId = $session->payment_intent;
+    } catch (Exception $e) {
+      die("Unable to fetch payment details from Stripe.");
+    }
+  }
 
-  // 2. (Optional) Insert into booking_history or logs if needed
+  // Update booking
+  $updateStmt = $conn->prepare("UPDATE bookings SET status = 'CONFIRMED', paymentIntentId = ? WHERE id = ?");
+  $updateStmt->bind_param("ss", $paymentIntentId, $bookingId);
+  $updateStmt->execute();
 
-  // 3. (Optional) Clear any temporary user data
-
-  // 4. Refresh token (if needed)
+  // Refresh token
   $payload = array(
-    "customerId" => $decoded->customerId,
-    "cartId" => $newCartId, // still used if cart logic exists elsewhere
-    "userId" => $decoded->userId,
+    "customerId" => $customerId,
+    "cartId" => $newCartId,
+    "userId" => $userId,
     "username" => $decoded->username,
     "role" => $decoded->role,
   );
@@ -55,52 +70,52 @@ if ($status === 'success') {
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <title>Payment <?php echo $status === 'success' ? 'Successful' : 'Failed'; ?></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-  <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
-  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700" rel="stylesheet" />
   <link href="css/styles.css" rel="stylesheet" />
+  <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
   <?php include "./component/header.php"; ?>
 
-  <div class="container-fluid d-flex flex-column align-items-center justify-content-center mt-5 payment-success">
+  <div class="container-fluid d-flex flex-column align-items-center justify-content-center mt-10 payment-success">
     <?php if ($status === 'success'): ?>
-      <h1 class="mt-10">Payment Successful</h1>
-      <i class="fas fa-check-circle fa-5x" style="color:green"></i>
-      <strong><?php echo htmlspecialchars($bookingId); ?></strong>
-      <p>Your event booking has been confirmed!</p>
+      <h1 class="mt-4">Payment Successful</h1>
+      <i class="fas fa-check-circle fa-5x text-success"></i>
+      <strong>Booking ID: <?php echo htmlspecialchars($bookingId); ?></strong>
+      <p class="mt-2">Your event booking has been confirmed!</p>
     <?php else: ?>
-      <h1 class="mt-5">Payment Failed</h1>
-      <i class="fas fa-times-circle fa-5x" style="color:red"></i>
-      <p>Something went wrong. Please try again.</p>
+      <h1 class="mt-4">Payment Failed</h1>
+      <i class="fas fa-times-circle fa-5x text-danger"></i>
+      <p class="mt-2">Something went wrong. Please try again.</p>
     <?php endif; ?>
   </div>
 
   <style>
     body {
-      margin: 0 auto;
+      margin: 50 auto;
+      font-family: Arial, sans-serif;
     }
 
     .payment-success {
-      width: 50%;
+      width: 60%;
       text-align: center;
     }
 
-    #mainNav {
-      padding-top: 1.5rem;
-      padding-bottom: 1.5rem;
-      border: none;
-      background-color: #212529;
-      transition: padding-top 0.3s ease-in-out, padding-bottom 0.3s ease-in-out;
-      color: white;
+    strong {
+      font-size: 28px;
+      display: block;
+      margin-top: 10px;
     }
 
-    strong {
-      font-size: 40px;
+    .text-success {
+      color: green;
+    }
+
+    .text-danger {
+      color: red;
     }
   </style>
 </body>

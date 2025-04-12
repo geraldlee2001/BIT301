@@ -16,6 +16,7 @@
         "tecnickcom/tcpdf": "^6.6",
         "firebase/php-jwt": "^6.9",
         "stripe/stripe-php": "^13.3",
-        "phpmailer/phpmailer": "^6.9"
+        "phpmailer/phpmailer": "^6.9",
+        "chillerlan/php-qrcode": "^5.0"
     }
 }

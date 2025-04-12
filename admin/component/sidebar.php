@@ -21,14 +21,6 @@ switch ($role) {
               </div>
               Organizer
             </a>
-      
-          </a>
-            <a class="nav-link" href="./products.php">
-            <div class="sb-nav-link-icon">
-              <i class="fas fa-tachometer-alt"></i>
-            </div>
-            Event
-          </a>
 
             <a class="nav-link" href="./analytics.php">
             <div class="sb-nav-link-icon">
@@ -54,10 +46,17 @@ switch ($role) {
 
           <a class="nav-link" href="./products.php">
           <div class="sb-nav-link-icon">
-            <i class="fas fa-tachometer-alt"></i>
+            <i class="fas fa-box"></i>
           </div>
-          Event
-        </a>
+          Events
+          </a>
+
+          <a class="nav-link" href="./promo_codes.php">
+          <div class="sb-nav-link-icon">
+            <i class="fas fa-tag"></i>
+          </div>
+          Promo Codes
+          </a>
            <a class="nav-link" href="./analytics.php">
             <div class="sb-nav-link-icon">
               <i class="fas fa-tachometer-alt"></i>

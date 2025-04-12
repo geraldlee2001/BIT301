@@ -4,14 +4,18 @@ include "./php/databaseConnection.php";
 $query = "SELECT
   p.id AS product_id,
   p.name AS product_name,
-  p.amount AS product_amount,
-  p.price AS product_price,
   p.date AS product_date,
   p.time AS product_time,
-  p.imageUrl AS product_imageUrl
+  p.imageUrl AS product_imageUrl,
+  (SELECT COUNT(*) FROM seats s WHERE s.eventId = p.id) as total_seats,
+  (SELECT COUNT(*) FROM seats s WHERE s.eventId = p.id AND s.isBooked = 1) as booked_seats,
+  MIN(tt.price) as min_price,
+  MAX(tt.price) as max_price
 FROM product p
-WHERE p.amount > 0
-GROUP BY p.id, p.name, p.productCode, p.amount, p.price, p.imageUrl;";
+LEFT JOIN ticket_types tt ON tt.eventId = p.id
+WHERE DATE(p.date) >= CURDATE()
+GROUP BY p.id, p.name, p.date, p.time, p.imageUrl
+ORDER BY p.date ASC;";
 $data = $conn->query($query);
 ?>
 
@@ -51,27 +55,33 @@ $data = $conn->query($query);
             <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
                 <?php
                 while ($item = $data->fetch_assoc()) {
-                    echo '<div>
-                                <a href="/product_detail.php?id=' . $item['product_id'] . '">
-                                    <div class="card h-100">
-                                        <!-- Product image-->
-                                        <img class="card-img-top" src="';
-                    echo $item['product_imageUrl'];
-                    echo ' " alt="productImage" />
-                                        <!-- Product details-->
-                                        <div class="card-body p-4">
-                                            <div class="text-center">
-                                                <!-- Product name-->
-                                                <h5 class="fw-bolder">';
-                    echo $item['product_name'];
-                    echo '</h5>
-                    <div class="d-flex justify-content-center small text-warning mb-2">
-                </div>';
-                    echo '<p> RM ' . $item['product_price'] . "</p>";
-                    echo '<p> Amount: ' . $item['product_amount'] . "</p>";
-                    echo '<p> Date: ' . $item['product_date'] . "</p>";
-                    echo '<p> Time: ' . $item['product_time'] . "</p>";
-                    echo ' </div>';
+                    echo '<div class="col mb-5">
+                        <a href="/product_detail.php?id=' . $item['product_id'] . '">
+                            <div class="card h-100">
+                                <!-- Product image-->
+                                <img class="card-img-top" src="' . $item['product_imageUrl'] . '" alt="productImage" />
+                                <!-- Product details-->
+                                <div class="card-body p-4">
+                                    <div class="text-center">
+                                        <!-- Product name-->
+                                        <h5 class="fw-bolder">' . $item['product_name'] . '</h5>
+                                        <div class="d-flex justify-content-center small text-warning mb-2"></div>';
+                    if ($item['min_price'] === null) {
+                        echo '<p class="mb-2">Price not set</p>';
+                    } else if ($item['min_price'] === $item['max_price']) {
+                        echo '<p class="mb-2">RM ' . number_format($item['min_price'], 2) . '</p>';
+                    } else {
+                        echo '<p class="mb-2">RM ' . number_format($item['min_price'], 2) . ' - RM ' . number_format($item['max_price'], 2) . '</p>';
+                    }
+                    $remainingSeats = $item['total_seats'] - $item['booked_seats'];
+                    echo '<p class="mb-2">Available Seats: ' . $remainingSeats . ' / ' . $item['total_seats'] . '</p>';
+                    echo '<p class="mb-2">Date: ' . $item['product_date'] . '</p>';
+                    echo '<p class="mb-2">Time: ' . $item['product_time'] . '</p>';
+                    echo '          </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>';
                 }
                 ?>
             </div>

@@ -63,12 +63,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <html>
                         <body>
                         <h1>Welcome to SuperConcert!</h1>
-                        <p>Dear $merchantName,</p>
+                        <p>Dear $username,</p>
                         <p>Your account has been created successfully. Below are your login details:</p>
-                        <p>Email: $email</p>
+                        <p>Username: $email</p>
                         <p>Password: <strong>$defaultPassword</strong></p>
                         <p>Please log in and change your password for security purposes.</p>
-                        <p><a href='http://localhost/admin/login.php'>Login Now</a></p>
+                        <p><a href='http://localhost:3000/admin/login.php'>Login Now</a></p>
                         </body>
                         </html>
                     ";

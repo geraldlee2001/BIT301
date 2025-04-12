@@ -1,71 +1,59 @@
 <?php
-include "../php/databaseConnection.php";
-include "../php/tokenDecoding.php";
-
-
-$merchantSql = "SELECT * FROM merchants";
-$merchantResult = $conn->query($merchantSql);
-
 require_once '../php/databaseConnection.php';
-include '../component/organizer_header.php';
+require_once '../php/tokenDecoding.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST')
-{
-    $eventName = $_POST['event_name'];
+use Ramsey\Uuid\Uuid;
+
+$merchantId = $decoded->merchantId;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = $_POST['name'];
     $description = $_POST['description'];
-    $eventDate = $_POST['event_date'];
-    $eventTime = $_POST['event_time'];
+    $date = $_POST['date'];
+    $time = $_POST['time'];
+    $productCode = $_POST['productCode'];
 
-    // **1️⃣ 检查是否已有相同日期和时间的活动**
-    $checkQuery = "SELECT * FROM events WHERE event_date = ? AND event_time = ?";
+    // Check if product code already exists
+    $checkQuery = "SELECT * FROM product WHERE productCode = ?";
     $stmt = $conn->prepare($checkQuery);
-    $stmt->bind_param("ss", $eventDate, $eventTime);
+    $stmt->bind_param("s", $productCode);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    if ($result->num_rows > 0)
-    {
-        echo "<script>alert('该日期和时间已有活动，请选择其他时间！');</script>";
-    }
-    else
-    {
-        // **2️⃣ 处理文件上传**
+    if ($result->num_rows > 0) {
+        echo "<script>alert('Product code already exists. Please use a different code.');</script>";
+    } else {
+        // Handle file upload
         $uploadDir = '../uploads/';
-        if (!is_dir($uploadDir))
-        {
+        if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
 
-        $filePath = ''; // **存储图片路径**
-        if (!empty($_FILES['event_file']['name']))
-        {
-            $fileExt = strtolower(pathinfo($_FILES['event_file']['name'], PATHINFO_EXTENSION));
+        $imageUrl = ''; // Store image path
+        if (!empty($_FILES['product_image']['name'])) {
+            $fileExt = strtolower(pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION));
             $allowedExts = ['jpg', 'png', 'jpeg'];
 
-            if (in_array($fileExt, $allowedExts) && $_FILES['event_file']['size'] <= 5 * 1024 * 1024)
-            {
-                $fileName = uniqid('event_') . '.' . $fileExt;
-                $filePath = $uploadDir . $fileName;
-                move_uploaded_file($_FILES['event_file']['tmp_name'], $filePath);
-            }
-            else
-            {
-                echo "<script>alert('文件格式错误或大小超出限制！');</script>";
+            if (in_array($fileExt, $allowedExts) && $_FILES['product_image']['size'] <= 5 * 1024 * 1024) {
+                $fileName = uniqid('product_') . '.' . $fileExt;
+                $imageUrl = $uploadDir . $fileName;
+                move_uploaded_file($_FILES['product_image']['tmp_name'], $imageUrl);
+            } else {
+                echo "<script>alert('Invalid file format or size exceeds 5MB!');</script>";
+                exit;
             }
         }
+        $productId = Uuid::uuid4();
 
-        // **3️⃣ 插入数据库**
-        $insertQuery = "INSERT INTO events (event_name, description, event_date, event_time, image) VALUES (?, ?, ?, ?, ?)";
+        // Insert into database
+        $insertQuery = "INSERT INTO product (ID,name, description, date, time, productCode, merchantId, imageUrl) VALUES (?,?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($insertQuery);
-        $stmt->bind_param("sssss", $eventName, $description, $eventDate, $eventTime, $filePath);
+        $stmt->bind_param("ssssssss", $productId, $name, $description, $date, $time, $productCode, $merchantId, $imageUrl);
 
-        if ($stmt->execute())
-        {
-            echo "<script>alert('活动创建成功！'); window.location.href='products.php';</script>";
-        }
-        else
-        {
-            echo "<script>alert('创建活动失败: " . $conn->error . "');</script>";
+        if ($stmt->execute()) {
+            echo "<script>alert('Product created successfully!'); window.location.href='ticket_type_management.php?id=" . $productId . "';</script>";
+        } else {
+            echo "<script>alert('Failed to create product: " . $conn->error . "');</script>";
         }
     }
 }
@@ -77,75 +65,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST')
 
 <head>
     <meta charset="UTF-8">
-    <title>Create Event</title>
+    <title>Create Product</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/main.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/main.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <link href="css/styles.css" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
 
-<body>
-    <div class="container mt-5">
-        <h2>Create Event</h2>
+<body class="sb-nav-fixed">
+    <?php include "./component/header.php"; ?>
+    <div id="layoutSidenav">
+        <?php include "./component/sidebar.php"; ?>
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h1 class="mt-4">Create Product</h1>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item"><a href="products.php">Products</a></li>
+                        <li class="breadcrumb-item active">Create Product</li>
+                    </ol>
 
-        <!-- 📌 显示日历 -->
-        <div id="calendar"></div>
+                    <form action="product_create.php" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label">Product Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="date" id="date" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Time</label>
+                            <input type="time" name="time" id="time" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Product Code</label>
+                            <input type="text" name="productCode" class="form-control" maxlength="20" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Image (JPG, PNG, JPEG only, Max 5MB)</label>
+                            <input type="file" name="product_image" class="form-control" accept=".jpg, .png, .jpeg">
+                        </div>
 
-        <form action="product_create.php" method="POST" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label class="form-label">Event Name</label>
-                <input type="text" name="event_name" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Description</label>
-                <textarea name="description" class="form-control" required></textarea>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Event Date</label>
-                <input type="date" name="event_date" id="event_date" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Event Time</label>
-                <input type="time" name="event_time" id="event_time" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Upload File (JPG, PNG, PDF, Max 5MB)</label>
-                <input type="file" name="event_file" class="form-control" accept=".jpg, .png, .pdf">
-            </div>
-            <button type="submit" class="btn btn-primary">Create Event</button>
-        </form>
+                        <button type="submit" class="btn btn-primary">Create Product</button>
+                    </form>
+                </div>
+            </main>
+            <?php include '../component/organizer_footer.php'; ?>
+        </div>
     </div>
-    <?php include '../component/organizer_footer.php'; ?>
-
-    <script>
-        $(document).ready(function () {
-            var calendarEl = document.getElementById('calendar');
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                events: 'admin/php/fetch_events.php' // 📌 获取已预订的事件
-            });
-            calendar.render();
-
-            // 📌 当选择日期和时间时，检查是否冲突
-            $("#event_date, #event_time").change(function () {
-                var selectedDate = $("#event_date").val();
-                var selectedTime = $("#event_time").val();
-
-                $.ajax({
-                    url: "admin/php/check_availability.php",
-                    type: "POST",
-                    data: { event_date: selectedDate, event_time: selectedTime },
-                    success: function (response) {
-                        if (response === "unavailable") {
-                            alert("该日期和时间已被预订，请选择其他时间！");
-                            $("#event_date").val("");
-                            $("#event_time").val("");
-                        }
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/scripts.js"></script>
 </body>
 
 </html>

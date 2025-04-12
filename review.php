@@ -7,16 +7,27 @@ $eventId = $_POST['eventId'];
 $promoCode = $_POST['promoCode'] ?? '';
 $selectedSeats = isset($_POST['selectedSeats']) ? explode(",", $_POST['selectedSeats']) : [];
 
-// Get event info
+// Get event info and calculate total price
 $event = $conn->query("SELECT * FROM product WHERE id='$eventId'")->fetch_assoc();
-$seatPrice = 50;
-$totalPrice = $seatPrice * count($selectedSeats);
+
+// Fetch seat prices from ticket types
+$totalPrice = 0;
+foreach ($selectedSeats as $seat) {
+  list($row, $number) = explode('-', $seat);
+  $seatQuery = $conn->prepare("SELECT tt.price FROM seats s JOIN ticket_types tt ON s.ticketTypeId = tt.id WHERE s.eventId = ? AND s.seatRow = ? AND s.seatNumber = ?");
+  $seatQuery->bind_param('ssi', $eventId, $row, $number);
+  $seatQuery->execute();
+  $result = $seatQuery->get_result();
+  if ($price = $result->fetch_assoc()) {
+    $totalPrice += $price['price'];
+  }
+}
 
 // Optional: Apply promo discount preview
 if (!empty($promoCode)) {
-  $promoResult = $conn->query("SELECT * FROM promo_codes WHERE code='$promoCode' AND validUntil >= CURDATE()");
+  $promoResult = $conn->query("SELECT * FROM promo_codes WHERE code='$promoCode' AND expiry_date >= CURDATE() AND current_usage < usage_limit");
   if ($promo = $promoResult->fetch_assoc()) {
-    $discount = $promo['discountPercent'];
+    $discount = ($promo['discount_type'] === 'percentage') ? $promo['discount_amount'] : ($promo['discount_amount'] / $totalPrice * 100);
     $totalPrice = $totalPrice - ($totalPrice * $discount / 100);
   }
 }

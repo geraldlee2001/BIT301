@@ -5,7 +5,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $eventDate = $_POST['event_date'];
     $eventTime = $_POST['event_time'];
 
-    $query = "SELECT * FROM events WHERE event_date = ? AND event_time = ?";
+    $query = "SELECT * FROM products WHERE date = ? AND time = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("ss", $eventDate, $eventTime);
     $stmt->execute();

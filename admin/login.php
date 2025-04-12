@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             setcookie("token",  $token, time() + 3600 * 60, "/", "localhost");
             header('Location: /admin/index.php'); // Redirect to a welcome page
         } else if ($user['type'] === 'MERCHANT') {
-            if ($user['is_first_login'] == 1) {
+            if ($user['isFirstTimeLogin'] === 1) {
                 echo "<script>console.log('Redirecting to change_password.php');</script>"; // 调试输出
                 $payload = array(
                     "userId" => $user['id'],
@@ -51,18 +51,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $merchantQuery = "SELECT * FROM merchants WHERE userId = \"$user[id]\"";
             $merchantQuery = $conn->query($merchantQuery);
             $merchant = $merchantQuery->fetch_assoc();
-            if (!$merchant) {
-                $payload = array(
-                    "merchantId" => null,
-                    "userId" => $user['id'],
-                    "username" =>  $user["userName"],
-                    "role" => $user['type'],
-                );
-                $token = JWT::encode($payload, $key, 'HS256');
-                setcookie("token",  $token, time() + 3600 * 60, "/", "localhost");
-                header('Location: /admin/organizer_create.php'); // Redirect to a profile create page
-                return;
-            }
             // Payload data
             $payload = array(
                 "merchantId" => $merchant['ID'],
@@ -92,7 +80,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Login - SB Admin</title>
+    <title>Login - EVENT X Admin</title>
     <link href="css/styles.css" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>

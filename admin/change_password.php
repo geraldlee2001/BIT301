@@ -1,9 +1,9 @@
 <?php
-session_start();
 include '../php/databaseConnection.php';
+include '../php/tokenDecoding.php';
 
 // 检查用户是否已登录
-if (!isset($_SESSION['organizer_id'])) {
+if (!isset($decoded->userId)) {
     header("Location: login.php");
     exit();
 }
@@ -14,13 +14,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($newPassword === $confirmPassword) {
         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
-        $userId = $_SESSION['organizer_id'];
+        $userId = $decoded->userId;
 
         // 更新密码并将 is_first_login 设置为 0
         $sql = "UPDATE user SET password = '$hashedPassword', isFirstTimeLogin = 0 WHERE id = '$userId'";
         if ($conn->query($sql) === TRUE) {
-            // 清除 session 并重定向到登录页面
-            unset($_SESSION['organizer_id']);
+            // delete cookies
+            setcookie("token", "", time() - 3600, "/", "localhost");
             header("Location: login.php");
             exit();
         } else {
@@ -36,46 +36,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Change Password</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-
-        .container {
-            max-width: 400px;
-            margin-top: 100px;
-        }
-
-        .form-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-    </style>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Login - EVENT X Admin</title>
+    <link href="css/styles.css" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
 
-<body>
-    <div class="container">
-        <div class="form-container">
-            <h2 class="text-center">Change Password</h2>
-            <?php if (isset($error)) echo "<p class='text-danger'>$error</p>"; ?>
-            <form action="change_password.php" method="POST">
-                <div class="mb-3">
-                    <label class="form-label">New Password</label>
-                    <input type="password" class="form-control" name="new_password" required>
+<body class="bg-primary">
+    <div id="layoutAuthentication">
+        <div id="layoutAuthentication_content">
+            <main>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-5">
+                            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                <div class="card-header">
+                                    <h3 class="text-center font-weight-light my-4">Change Password</h3>
+                                </div>
+                                <div class="card-body">
+                                    <form action="change_password.php" method="POST">
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control" type="password" name='new_password' placeholder="New Password" />
+                                            <label for="new_password">New Password</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control" id="password" type="password" name='confirm_password' placeholder="Confirm Password" />
+                                            <label for="confirm_password">Confirm Password</label>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                            <input type="submit" value="Update Password">
+                                        </div>
+                                    </form>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Confirm Password</label>
-                    <input type="password" class="form-control" name="confirm_password" required>
-                </div>
-                <button type="submit" class="btn btn-success w-100">Update Password</button>
-            </form>
+            </main>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="js/scripts.js"></script>
 </body>
 
 </html>

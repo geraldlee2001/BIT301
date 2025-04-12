@@ -1,86 +1,120 @@
-const seatMapContainer = document.getElementById( "seat-map" );
-
-const rows = [
-  "A", "B", "C", "D", "E", "F", "G",
-  "H", "I", "J", "K", "L", "AA", "BB", "CC", "DD", "EE"
-];
-
-const seatCounts = {
-  A: 34, B: 34, C: 34, D: 34, E: 34, F: 32, G: 32,
-  H: 32, I: 32, J: 32, K: 32, L: 32,
-  AA: 50, BB: 50, CC: 50, DD: 50, EE: 25,
-};
-
-let bookedSeats = [];
-
-// Get product ID from URL
-const urlParams = new URLSearchParams( window.location.search );
-const productId = urlParams.get( "id" );
-
-// Fetch booked seats and render
-fetch( `/php/getBookedSeats.php?id=${ productId }` )
-  .then( res => res.json() )
-  .then( data =>
-  {
-    bookedSeats = data.bookedSeats || [];
-    renderSeatMap();
-  } );
-
-function renderSeatMap ()
+document.addEventListener( 'DOMContentLoaded', function ()
 {
-  seatMapContainer.innerHTML = ""; // Clear previous seats
+  const seatMap = document.getElementById( 'seat-map' );
+  const selectedSeatsSpan = document.getElementById( 'selected-seats' );
+  const selectedSeatsInput = document.getElementById( 'selectedSeatsInput' );
+  const totalPriceSpan = document.getElementById( 'totalPrice' );
+  const promoCodeInput = document.getElementById( 'promoCode' );
+  const applyPromoButton = document.getElementById( 'applyPromoCode' );
+  const promoMessage = document.getElementById( 'promoMessage' );
+  const finalPriceSection = document.querySelector( '.final-price-section' );
+  const originalPriceSpan = document.getElementById( 'originalPrice' );
+  const discountAmountSpan = document.getElementById( 'discountAmount' );
+  const finalPriceSpan = document.getElementById( 'finalPrice' );
+  const appliedDiscountInput = document.getElementById( 'appliedDiscount' );
 
-  rows.forEach( row =>
+  let selectedSeats = new Map(); // Map to store seat IDs and their details
+  let appliedDiscount = 0;
+
+  // Handle seat selection
+  seatMap.addEventListener( 'click', function ( e )
   {
-    const rowEl = document.createElement( "div" );
-    rowEl.classList.add( "row" );
+    const seat = e.target.closest( '.seat' );
+    if ( !seat || seat.classList.contains( 'booked' ) ) return;
 
-    const label = document.createElement( "span" );
-    label.textContent = row;
-    label.classList.add( "row-label" );
-    rowEl.appendChild( label );
+    const seatId = seat.dataset.seat;
+    const seatPrice = parseFloat( seat.dataset.price || 0 );
+    const seatType = seat.dataset.type || '';
 
-    const count = seatCounts[ row ];
-
-    for ( let i = 1; i <= count; i++ )
+    if ( selectedSeats.has( seatId ) )
     {
-      const seat = document.createElement( "div" );
-      seat.classList.add( "seat" );
-      seat.setAttribute( "data-row", row );
-      seat.textContent = i;
-
-      const seatId = `${ row }-${ i }`;
-
-      if ( bookedSeats.includes( seatId ) )
-      {
-        seat.classList.add( "booked" );
-      } else
-      {
-        seat.addEventListener( "click", () =>
-        {
-          seat.classList.toggle( "selected" );
-          updateSelectedSeats();
-        } );
-      }
-
-      rowEl.appendChild( seat );
+      selectedSeats.delete( seatId );
+      seat.classList.remove( 'selected' );
+    } else
+    {
+      selectedSeats.set( seatId, {price: seatPrice, type: seatType} );
+      seat.classList.add( 'selected' );
     }
 
-    seatMapContainer.appendChild( rowEl );
+    updateSelectedSeatsDisplay();
+    updatePriceDisplay();
   } );
-}
 
-function updateSelectedSeats ()
-{
-  const selected = document.querySelectorAll( "#seat-map .seat.selected:not(.booked)" );
-
-  const selectedText = [ ...selected ].map( seat =>
+  function updateSelectedSeatsDisplay ()
   {
-    const row = seat.getAttribute( "data-row" );
-    const number = seat.textContent.trim();
-    return `${ row }-${ number }`;
-  } ).join( ", " ) || "None";
+    const seatDetails = Array.from( selectedSeats.entries() ).map( ( [ seatId, details ] ) =>
+      `${ seatId } (${ details.type })`
+    );
+    selectedSeatsSpan.textContent = seatDetails.length > 0 ? seatDetails.join( ', ' ) : 'None';
+    selectedSeatsInput.value = Array.from( selectedSeats.keys() ).join( ',' );
+  }
 
-  document.getElementById( "selected-seats" ).textContent = selectedText;
-  document.getElementById( "selectedSeatsInput" ).value = selectedText;
-}
+  function updatePriceDisplay ()
+  {
+    const subtotal = Array.from( selectedSeats.values() )
+      .reduce( ( sum, details ) => sum + details.price, 0 );
+    const discount = subtotal * ( appliedDiscount / 100 );
+    const finalPrice = subtotal - discount;
+
+    totalPriceSpan.textContent = `RM${ subtotal.toFixed( 2 ) }`;
+
+    if ( appliedDiscount > 0 )
+    {
+      originalPriceSpan.textContent = `RM${ subtotal.toFixed( 2 ) }`;
+      discountAmountSpan.textContent = `-RM${ discount.toFixed( 2 ) }`;
+      finalPriceSpan.textContent = `RM${ finalPrice.toFixed( 2 ) }`;
+    }
+  }
+
+  // Handle promo code application
+  applyPromoButton.addEventListener( 'click', function ()
+  {
+    const promoCode = promoCodeInput.value.trim();
+    if ( !promoCode )
+    {
+      promoMessage.textContent = 'Please enter a promo code';
+      return;
+    }
+    const subtotal = Array.from( selectedSeats.values() )
+      .reduce( ( sum, details ) => sum + details.price, 0 );
+    const eventId = new URLSearchParams( window.location.search ).get( 'id' );
+    console.log( `promoCode=${ encodeURIComponent( promoCode ) }&productId=${ encodeURIComponent( eventId ) }&totalPrice=${ encodeURIComponent( subtotal ) }` )
+    // Make API call to check promo code
+    fetch( '/php/apply_promo_code.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `code=${ encodeURIComponent( promoCode ) }&productId=${ encodeURIComponent( eventId ) }&price=${ encodeURIComponent( subtotal ) }`
+    } )
+      .then( response => response.json() )
+      .then( data =>
+      {
+        if ( data.success )
+        {
+          const discountAmount = data.discount_value;
+          const originalPrice = data.original_price;
+          appliedDiscount = ( ( discountAmount / originalPrice ) * 100 ).toFixed( 0 );
+          appliedDiscountInput.value = appliedDiscount;
+          promoMessage.textContent = `Promo code applied! ${ appliedDiscount }% discount`;
+          promoMessage.style.color = 'green';
+          finalPriceSection.style.display = 'block';
+          updatePriceDisplay();
+        } else
+        {
+          promoMessage.textContent = data.message || 'Invalid promo code';
+          promoMessage.style.color = 'red';
+          appliedDiscount = 0;
+          appliedDiscountInput.value = '';
+          finalPriceSection.style.display = 'none';
+        }
+      } )
+      .catch( error =>
+      {
+        console.error( 'Error:', error );
+        promoMessage.textContent = 'Error applying promo code';
+        promoMessage.style.color = 'red';
+      } );
+  } );
+} );
+

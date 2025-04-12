@@ -22,6 +22,7 @@ $data = $result->fetch_assoc();
     <link href="css/styles.css" rel="stylesheet" />
     <script src="js/productDetail.js"></script>
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+
 </head>
 
 <body class="sb-nav-fixed">
@@ -51,66 +52,26 @@ $data = $result->fetch_assoc();
                         <img id="imagePreview" src="../<?php echo $data['imageUrl'] ?>" alt="Preview">
                     </div>
                     <button type="submit" class="btn btn-primary">Update</button>
+                    <a href="./ticket_type_management.php?id=<?php echo $_GET['id'] ?>" class="btn btn-secondary mt-3">Manage Tickets</a>
                 </form>
 
-                <h4>2. Assign to Seating Sections</h4>
-                <div id="seatingSection">
-                    <div class="section">
-                        <input type="text" name="section_name[]" placeholder="Section Name" required>
-                        <select name="section_ticket_type[]">
-                            <!-- Will be populated using JS -->
-                        </select>
-                    </div>
+                <div class="qr-code-section mt-4">
+                    <h3>Scan QR Code to View Seats</h3>
+                    <div id="qrcode" class="mt-3"></div>
+                    <script>
+                        // Generate QR code when page loads
+                        window.onload = function() {
+                            generateQRCode('<?php echo $_GET["id"] ?>');
+                        };
+                    </script>
                 </div>
-                <button type="button" onclick="addSection()">Add Section</button>
+
+
 
             </main>
             <?php include "./component/footer.php" ?>
         </div>
     </div>
-    <script>
-        function addTicketType() {
-            const div = document.createElement('div');
-            div.className = 'ticket-type';
-            div.innerHTML = `<input type="text" name="ticket_name[]" placeholder="Category Name" required>
-        <input type="number" step="0.01" name="ticket_price[]" placeholder="Price" required>
-        <input type="number" name="ticket_max[]" placeholder="Max Qty" required>`;
-            document.getElementById('ticketTypes').appendChild(div);
-        }
-
-        function addSection() {
-            const div = document.createElement('div');
-            div.className = 'section';
-            div.innerHTML = `<input type="text" name="section_name[]" placeholder="Section Name" required>
-        <select name="section_ticket_type[]"></select>`;
-            const select = div.querySelector("select");
-            populateSelect(select);
-            document.getElementById('seatingSection').appendChild(div);
-        }
-
-        function addPromo() {
-            const div = document.createElement('div');
-            div.className = 'promo';
-            div.innerHTML = `<input type="text" name="promo_code[]" placeholder="Promo Code">
-        <input type="number" name="promo_discount[]" placeholder="Discount (%)">
-        <input type="date" name="promo_expiry[]">
-        <select name="promo_ticket_type[]"></select>`;
-            const select = div.querySelector("select");
-            populateSelect(select);
-            document.getElementById('promoSection').appendChild(div);
-        }
-
-        function populateSelect(select) {
-            const ticketNames = document.getElementsByName("ticket_name[]");
-            select.innerHTML = '';
-            ticketNames.forEach((input, i) => {
-                const option = document.createElement("option");
-                option.value = i;
-                option.textContent = input.value || `Ticket ${i+1}`;
-                select.appendChild(option);
-            });
-        }
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="js/scripts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
@@ -120,6 +81,29 @@ $data = $result->fetch_assoc();
 </html>
 
 <style>
+    /* QR Code section styling */
+    .qr-code-section {
+        text-align: center;
+        margin: 20px auto;
+        max-width: 500px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #fff;
+    }
+
+    #qrcode {
+        display: flex;
+        justify-content: center;
+        margin: 15px 0;
+    }
+
+    #qrcode img {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
     /* General form styling */
     #productForm {
         max-width: 500px;

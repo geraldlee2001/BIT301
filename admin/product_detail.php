@@ -55,17 +55,6 @@ $data = $result->fetch_assoc();
                     <a href="./ticket_type_management.php?id=<?php echo $_GET['id'] ?>" class="btn btn-secondary mt-3">Manage Tickets</a>
                 </form>
 
-                <div class="qr-code-section mt-4">
-                    <h3>Scan QR Code to View Seats</h3>
-                    <div id="qrcode" class="mt-3"></div>
-                    <script>
-                        // Generate QR code when page loads
-                        window.onload = function() {
-                            generateQRCode('<?php echo $_GET["id"] ?>');
-                        };
-                    </script>
-                </div>
-
 
 
             </main>

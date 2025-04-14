@@ -29,7 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   if ($_POST['action'] === 'create_ticket_type') {
     try {
       $ticketTypeId = Uuid::uuid4();
-      $name = $_POST['name'];
+
+      // Validate ticket type name
+      if (empty($_POST['name']) && empty($_POST['name1'])) {
+        throw new Exception('Ticket type name is required');
+      }
+
+      // Use custom name if provided, otherwise use selected name
+      $name = !empty($_POST['name1']) ? $_POST['name1'] : $_POST['name'];
       $price = $_POST['price'];
       $maxQuantity = $_POST['maxQuantity'];
       $restrictions = $_POST['restrictions'];
@@ -185,7 +192,7 @@ $ticketTypes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
               </div>
               <div class="mb-3" id="customTicketTypeDiv" style="display: none;">
                 <label class="form-label">Custom Ticket Type Name</label>
-                <input type="text" id="customTicketType" name="name" class="form-control" maxlength="50" required>
+                <input type="text" id="customTicketType" name="name1" class=" form-control" maxlength="50" required>
               </div>
               <div class="mb-3">
                 <label class="form-label">Price</label>
@@ -379,14 +386,11 @@ $ticketTypes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
       selectedSeatsInfo.id = 'selectedSeatsInfo';
       seatMap.parentElement.insertBefore(selectedSeatsInfo, seatMap.nextSibling);
 
-      // Fetch both booked and assigned seats
-      Promise.all([
-          fetch(`../php/getBookedSeats.php?id=<?php echo $eventId; ?>`).then(r => r.json()),
-          fetch(`../php/getAssignedSeats.php?id=<?php echo $eventId; ?>`).then(r => r.json())
-        ])
-        .then(([bookedData, assignedData]) => {
-          const bookedSeats = new Set(bookedData.bookedSeats);
-          const assignedSeats = assignedData.assignedSeats;
+      // Fetch assigned seats
+      fetch(`../php/getAssignedSeats.php?id=<?php echo $eventId; ?>`)
+        .then(r => r.json())
+        .then((data) => {
+          const assignedSeats = data.assignedSeats;
 
           // Reset available seats count
           availableSeatsPerRow = {};
@@ -401,13 +405,10 @@ $ticketTypes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                 seat.dataset.seat = seatLabel;
                 seat.textContent = `${row}${i}`;
 
-                if (bookedSeats.has(seatLabel)) {
-                  seat.classList.add('assigned');
-                  seat.dataset.ticketType = 'Booked';
-                } else if (assignedSeats[seatLabel]) {
+                if (assignedSeats[seatLabel]) {
                   seat.classList.add('assigned');
                   seat.style.backgroundColor = getTicketTypeColor(assignedSeats[seatLabel]);
-                  seat.dataset.ticketType = assignedSeats[seatLabel];
+                  seat.dataset.ticketType = assignedSeats[seatLabel].type;
                 } else {
                   seat.onclick = () => toggleSeat(seat);
                   availableSeatsPerRow[row]++;
@@ -588,6 +589,9 @@ $ticketTypes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
     function getTicketTypeColor(ticketType) {
+      if (typeof ticketType === 'object' && ticketType.type) {
+        ticketType = ticketType.type;
+      }
       const colors = {
         'VIP': '#FFD700',
         'General Admission': '#90EE90',

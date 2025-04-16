@@ -9,15 +9,15 @@ $userId = $decoded->userId ?? null;
 
 // Validate authentication
 if (!$userId) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
+  http_response_code(401);
+  echo json_encode(['error' => 'Unauthorized']);
+  exit;
 }
 
 if (empty($productId)) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Product ID is required']);
-    exit;
+  http_response_code(400);
+  echo json_encode(['error' => 'Product ID is required']);
+  exit;
 }
 
 // Get users from waiting list with contact details
@@ -32,38 +32,37 @@ $stmt->bind_param("s", $productId);
 $stmt->execute();
 $result = $stmt->get_result();
 
-  while ($row = $result->fetch_assoc()) {
-    $notified = false;
-    $subject = "Seats Available for " . $row['event_name'];
-    $message = "Dear {$row['name']},\n\nSeats are now available for {$row['event_name']}. " .
-      "Please log in to your account to complete your booking.\n\n" .
-      "This offer is valid for the next 24 hours.";
+while ($row = $result->fetch_assoc()) {
+  $notified = false;
+  $subject = "Seats Available for " . $row['event_name'];
+  $message = "Dear {$row['name']},\n\nSeats are now available for {$row['event_name']}. " .
+    "Please log in to your account to complete your booking.\n\n" .
+    "This offer is valid for the next 24 hours.";
 
-    // Handle notifications based on preferred contact method
-    if ($row['preferredContact'] === 'EMAIL' || $row['preferredContact'] === 'BOTH') {
-      if (!empty($row['email'])) {
-        $notified = sendEmail($row['email'], $subject, $message);
-      }
+  // Handle notifications based on preferred contact method
+  if ($row['preferredContact'] === 'EMAIL' || $row['preferredContact'] === 'BOTH') {
+    if (!empty($row['email'])) {
+      $notified = sendEmail($row['email'], $subject, $message);
     }
-    
-    if ($row['preferredContact'] === 'PHONE' || ($row['preferredContact'] === 'BOTH' && !$notified)) {
-      if (!empty($row['phone'])) {
-        // Implement SMS notification here
-        $notified = sendSMS($row['phone'], $message);
-      }
-    }
+  }
 
-    // Update notification attempts and status
-    $updateSql = "UPDATE waiting_list 
+  if ($row['preferredContact'] === 'PHONE' || ($row['preferredContact'] === 'BOTH' && !$notified)) {
+    if (!empty($row['phone'])) {
+      // Implement SMS notification here
+      $notified = sendSMS($row['phone'], $message);
+    }
+  }
+
+  // Update notification attempts and status
+  $updateSql = "UPDATE waiting_list 
                   SET notificationAttempts = notificationAttempts + 1,
                       lastNotificationAttempt = NOW(),
                       status = CASE WHEN ? = 1 THEN 'NOTIFIED' ELSE status END,
                       notificationDate = CASE WHEN ? = 1 THEN NOW() ELSE notificationDate END
                   WHERE id = ?";
-    $updateStmt = $conn->prepare($updateSql);
-    $updateStmt->bind_param("iis", $notified, $notified, $row['id']);
-    $updateStmt->execute();
-  }
+  $updateStmt = $conn->prepare($updateSql);
+  $updateStmt->bind_param("iis", $notified, $notified, $row['id']);
+  $updateStmt->execute();
 }
 
 // Check for approaching event dates and notify users
@@ -94,7 +93,7 @@ function notifyEventApproaching()
         $notified = sendEmail($row['email'], $subject, $message);
       }
     }
-    
+
     if ($row['preferredContact'] === 'PHONE' || ($row['preferredContact'] === 'BOTH' && !$notified)) {
       if (!empty($row['phone'])) {
         $notified = sendSMS($row['phone'], $message);
